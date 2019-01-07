@@ -12,6 +12,7 @@
         border-radius 50%
         transition all $transition 
         position relative
+        background $radio-bg-color
         // inner
         &:before
             content ""
@@ -45,6 +46,12 @@
             border-color $radio-checked-color
             &:before
                 transform scale(1)
+    // focus
+    &:focus
+        outline none
+        .k-wrapper
+            border-color $radio-checked-color
+
     // disabled
     &.k-disabled
         color $radio-disabled-color
@@ -55,4 +62,5 @@
             &:before
                 background $radio-disabled-inner-color
 
-@import $theme-dir + '/radio.styl' if exists($theme-dir + '/radio.styl') 
+
+require($theme-dir + '/radio.styl')

@@ -6,18 +6,13 @@ arrow-short = $tooltip-arrow-width - 2px
 .k-tooltip
     display inline-block
 .k-tooltip-content
-    position absolute
+    max-width $tooltip-max-width
+    min-width 0
     background-color $tooltip-bg-color 
-    box-shadow $box-shadow
     padding $tooltip-padding
-    border-radius $tooltip-border-radius 
-    font-size $tooltip-font-size
     color $tooltip-color
     line-height $tooltip-line-height
-    z-index $max-z-index
-    top 0
-    left 0
-
+    
     // arrow
     > .k-arrow
         &:before, &
@@ -74,5 +69,11 @@ arrow-short = $tooltip-arrow-width - 2px
     &.k-cannot-hover
         pointer-events none
 
-$dir = $theme-dir + '/tooltip.styl';
-@import $dir if exists($dir) 
+    // confirm
+    .k-buttons
+        padding-top $tooltip-confirm-buttons-padding-top
+        .k-btn:last-of-type
+            margin-left $tooltip-confirm-buttons-gutter
+
+
+require($theme-dir + '/tooltip.styl')

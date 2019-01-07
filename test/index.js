@@ -1,7 +1,8 @@
 import Intact from 'intact';
 import {matchSnapshot} from 'chai-karma-snapshot';
-import 'babel-polyfill';
+// import 'babel-polyfill';
 import '../styles/kpc.styl';
+import './test.styl';
 
 chai.use(matchSnapshot);
 

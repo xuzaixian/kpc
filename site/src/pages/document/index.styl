@@ -1,22 +1,21 @@
 @import '../../styles/variables';
 // @import '../../node_modules/highlight.js/styles/default.css';
 
-$aside-width = 300px
+$aside-width = 200px
 
 .document-page
     box-sizing border-box
-    background #efefef
+    //background #efefef
     .content-wrapper.fixed
         margin-bottom 0
-        aside
+        .aside-wrapper
             position fixed
-            top headerHeight 
+            //top headerHeight
             background #fff
             height "calc(100% - %s)" % headerHeight
             overflow auto
             box-sizing border-box
-        article
-            margin-left $aside-width
+            width $aside-width - 1px
     .content-wrapper
         width 100%
         display flex
@@ -24,12 +23,15 @@ $aside-width = 300px
         margin 0 auto
         border-radius 5px
         box-shadow 0 1px 1px rgba(0, 0, 0, .08)
-        min-height calc(100% - 15px)
+        min-height calc(100vh - 15px)
         aside
             width $aside-width
             border-right 1px solid #eee
+            .k-btn
+                display none
         .aside-wrapper
             position relative
+            padding-bottom 70px
             .catalog-section
                 margin-top 25px
             h5
@@ -42,8 +44,8 @@ $aside-width = 300px
                 padding 0
             a
                 display block
-                height 30px
-                line-height 30px
+                height 40px
+                line-height 40px
                 padding-left 25px
                 color #333
                 &:hover
@@ -54,21 +56,27 @@ $aside-width = 300px
                     font-size 12px
             .active 
                 & > a, & span
-                    color linkColor !important
+                    color #ffffff !important
+                    background-color $primary-color
+                    //color linkColor !important
                     // border-right 2px solid linkColor
                         
             .sub-catalogs
                 margin-left 10px
                 font-size 12px
-            .aside-border
-                border-right 2px solid linkColor
-                position absolute
-                right 0
-                top 0
+            .k-badge
+                line-height 16px
+                padding-right 10px
+        .aside-border
+            border-right 2px solid linkColor
+            position absolute
+            left 0
+            top 0
         article
             flex 1
-            padding 10px 20px
+            padding 10px 2.8%
             overflow auto
+            // margin-right 150px
         .article-head
             // border-bottom 1px solid #eee
             .title 
@@ -99,16 +107,18 @@ $aside-width = 300px
                 margin 20px 0
     .api
         .k-table-wrapper
-            thead
-                th:first-of-type
-                    width 150px
-                th:nth-child(2)
-                    width 50%
+            th:first-of-type
+            td:first-of-type
+                width 150px
+            th:nth-child(2)
+            td:nth-child(2)
+                width 50%
 
     .example
-        border 1px solid #eee
+        border 1px solid #ccc
         padding 0 20px 20px 20px
         margin-bottom 20px
+        background #fff
     .example-opera
         padding 30px 0
     .example-desc
@@ -118,10 +128,11 @@ $aside-width = 300px
         position relative
         .title
             position absolute
-            top -9px
+            top -13px
             left 15px
             background #fff
             padding 0 10px
+            font-size 16px
     .example-code
         code
             border none
@@ -133,3 +144,87 @@ $aside-width = 300px
         li
             list-style decimal
             margin 5px 0
+    .table-of-contents
+        position fixed
+        right 0
+        //top 70px
+        padding-top 15px
+        width 150px
+        font-size 12px
+        li
+            padding 3px 10px 3px 15px
+            cursor pointer
+            &:hover
+            &.active
+                color $primary-color
+
+.fixed-aside
+    .content-wrapper
+        .aside-wrapper
+            position fixed
+            //top headerHeight
+            background #fff
+            height "calc(100% - %s)" % 40px
+            overflow auto
+            box-sizing border-box
+            width $aside-width - 1px
+        article
+            background-color #f1f1f5
+            padding 24px 200px 10px 40px
+
+.aside-border-nav
+    height 100%
+    position absolute
+    border-left 1px solid #B2B2B2
+
+.aside-dot
+    height 8px !important
+    width 8px
+    border 1px solid #0091ea
+    border-radius 8px
+    left -3px
+    position absolute
+    background-color #0091ea // #CCCCCC
+
+.c-ellipsis-dot:before
+    content ''
+    position absolute
+    width 8px
+    height 8px
+    border-radius 8px
+    margin-top 5px
+    border 1px solid #CCCCCC
+    left -3px
+    background-color #CCCCCC
+
+@media (max-width: 768px) 
+    .document-page
+        .table-of-contents
+            display none
+        .content-wrapper
+            aside
+                position fixed
+                z-index $max-z-index
+                height 100%
+                transform translateX(-201px)
+                transition transform $transition
+                &.expanded
+                    transform translateX(0)
+                    box-shadow 0 4px 4px 0 rgba(0,0,0,0.3)
+                .k-btn
+                    display block
+                    position absolute
+                    top 50px
+                    right 0
+                    transform translateX(100%)
+                    border none
+                    box-shadow 3px 0 4px 0 rgba(0,0,0,0.3)
+            article
+                padding 15px
+        .aside-wrapper
+            transition left $transition
+    .document-page .api .k-table-wrapper th:first-of-type,
+    .document-page .api .k-table-wrapper td:first-of-type
+    .document-page .api .k-table-wrapper th:nth-child(2), 
+    .document-page .api .k-table-wrapper td:nth-child(2)
+        width auto

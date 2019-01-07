@@ -14,12 +14,13 @@ export default class Checkbox extends Intact {
             value: false,
             trueValue: true,
             falseValue: false,
+            indeterminate: false,
         };
     }
 
     static propTypes = {
         disabled: Boolean,
-        group: Boolean,
+        indeterminate: Boolean,
     }
 
     // set value to falseValue when destroy
@@ -51,6 +52,12 @@ export default class Checkbox extends Intact {
         return isArray(value) ? 
             value.indexOf(trueValue) > -1 : 
             value === trueValue;
+    }
+
+    _onKeypress(e) {
+        if (e.keyCode === 13) {
+            this.refs.input.click();
+        }
     }
 }
 

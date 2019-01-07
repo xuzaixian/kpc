@@ -3,10 +3,11 @@ import {Tabs, Tab} from 'kpc/components/tabs';
 <div class="contents">
     <div key="demos" v-if={{ self.get('demos').length }}>
         <h1>示例</h1>
-        {{ self.get('demos').sort((a, b) => {
-            return a.data.setting.order - b.data.setting.order;
-        }).map(Demo => {
-            return <div class={{ `example index-${Demo.data.index}` }}>
+        {{ self.get('demos').map(Demo => {
+            return <div class={{ `example index-${Demo.data.index}` }}
+                key={{ Demo.data.index }}
+                id={{ Demo.data.index }}
+            >
                 <div class="example-opera">
                     <Demo.default /> 
                 </div>
@@ -20,6 +21,15 @@ import {Tabs, Tab} from 'kpc/components/tabs';
                             value={{ value.file ? value.file : `index.${value.language}` }}
                         >
                             {{ value.file ? value.file : `index.${value.language}` }}
+                            {{ do { 
+                                if (!value.file) {
+                                    if (value.language === 'vue') {
+                                        '(Vue)'
+                                    } else if (value.language === 'jsx') {
+                                        '(React)'
+                                    }
+                                }
+                            } }}
                         </Tab>
                     </Tabs>
                     <div class="code" innerHTML={{ (Demo.data.highlighted.find(item => {
@@ -30,6 +40,14 @@ import {Tabs, Tab} from 'kpc/components/tabs';
             </div>
         }) }}
     </div>
-    <div innerHTML={{ self.get('contents') }} key="contents" class="api"></div>
+    <div key="contents" class="api">
+        {{ __u.map(self.get('contents'), (value, index) => {
+            const Example = self.get('examples')[index];
+            return [
+                <div innerHTML={{ value }}></div>,
+                Example ? <Example.default /> : undefined,
+            ];
+        }) }}
+    </div>
 </div>
 

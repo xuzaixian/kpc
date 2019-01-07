@@ -2,9 +2,25 @@ import Intact from 'intact';
 import template from './formItem.vdt';
 import Form from './form';
 
+const warn = Intact.utils.warn;
+
 export default class FormItem extends Intact {
     @Intact.template()
     get template() { return template; }
+
+    static propTypes = {
+        model: String,
+        rules: Object,
+        // isValid: Boolean,
+        isDirty: Boolean,
+        // message: String, 
+        messages: Object,
+        classNames: Object,
+        label: String,
+        htmlFor: String,
+        hideLabel: Boolean,
+        force: Boolean,
+    }
 
     defaults() {
         return {
@@ -20,11 +36,8 @@ export default class FormItem extends Intact {
             label: undefined,
             htmlFor: undefined,
             hideLabel: false,
+            force: false,
         }
-    }
-
-    static propTypes = {
-        hideLabel: Boolean,
     }
 
     _init() {
@@ -33,19 +46,21 @@ export default class FormItem extends Intact {
         this.on('$change:rules', this.validateIfDirty);
     }
 
-    _mount() {
-        if (!this.get('model')) return;
-
+    _beforeCreate() {
         let form = this.parentVNode;
         while (form && form.tag !== Form) {
             form = form.parentVNode;
         }
+        /* istanbul ignore if */
         if (!form) {
-            throw new Error('FormItem must be used as the descendant of Form');
+            // return warn('FormItem must be used as the descendant of Form');
+            return;
         }
         this.form = form = form.children;
-        const items = form.get('items');
-        items.push(this);
+        if (this.get('model')) {
+            const items = form.get('items');
+            items.push(this);
+        }
     }
 
     getRules() {
@@ -82,7 +97,7 @@ export default class FormItem extends Intact {
     }
 
     validate() {
-        if (!this.get('model')) return;
+        if (!this.get('model') || !this.form) return;
         
         this._cancel();
 
@@ -107,6 +122,7 @@ export default class FormItem extends Intact {
                     fn = rule;
                 } else {
                     fn = Form.methods[key];
+                    /* istanbul ignore if */
                     if (!fn) {
                         console.warn(`Can not find validate method: ${key}`);
                         continue;
@@ -151,7 +167,17 @@ export default class FormItem extends Intact {
     }
 
     validateIfDirty() {
+        // if force is true, it will been validated when update
+        // so we do nothing for this case
+        if (this.get('force')) return;
+
         if (this.get('isDirty')) {
+            this.validate();
+        }
+    }
+
+    _beforeUpdate() {
+        if (this.get('force') && this.get('isDirty')) {
             this.validate();
         }
     }
@@ -170,14 +196,14 @@ export default class FormItem extends Intact {
 
     _dirty() {
         if (!this.get('model')) return;
+        /* istanbul ignore if */
         if (this.get('isDirty')) return;
 
-        // for vue value will changed after event
-        if (this.$nextTick) {
-            this.$nextTick(this.validate);
-        } else {
-            this.validate();
-        }
+        // for select, the focusout event triggers before select
+        // so we put off validating it 
+        setTimeout(() => {
+            this.validate()
+        }, 100);
     }
 
     _cancel() {
@@ -188,7 +214,7 @@ export default class FormItem extends Intact {
     }
 
     _destroy() {
-        if (!this.get('model')) return;
+        if (!this.get('model') || !this.form) return;
         const items = this.form.get('items');
         items.splice(items.indexOf(this), 1);
         // this.reset();

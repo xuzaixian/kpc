@@ -1,7 +1,11 @@
 import Intact from 'intact';
+import { functionTypeAnnotation } from 'babel-types';
 
 const utils = Intact.utils;
-const {get, isNullOrUndefined, isObject} = utils;
+const {get, isNullOrUndefined, isObject, isFunction, noop} = utils;
+const Types = Intact.Vdt.miss.Types;
+
+export {get, isNullOrUndefined, isObject, isFunction, noop};
 
 export function addStyle(style, extra) {
     if (!style) return extra;
@@ -36,8 +40,12 @@ export function isStringOrNumber(o) {
     return type === 'string' || type === 'number';
 }
 
+export function isTextChildren(o) {
+    return isStringOrNumber(o) || isTextVNode(o);
+}
+
 export function isTextVNode(o) {
-    return isStringOrNumber(o) || o.type === 1;
+    return o && o.type === Types.Text;
 }
 
 export function isStringOrNumberNotEmpty(o) {
@@ -49,15 +57,15 @@ export function getTextByChildren(children) {
     let ret = '';
     if (Array.isArray(children)) {
         children.forEach(vNode => {
-            if (isTextVNode(vNode)) {
-                ret += vNode.children;
-            }
+            ret += getTextByChildren(vNode);
         });
     } else if (isStringOrNumber(children)) {
         ret += children;
+    } else if (isTextVNode(children)) {
+        ret += children.children;
     }
 
-    return ret;
+    return ret.trim();
 }
 
 
@@ -65,8 +73,9 @@ export function findParentComponent(Component, instance, isUntil) {
     let ret;
     let parent = instance.parentVNode;
     while (parent) {
-        if (parent.tag === Component) {
-            ret = parent.children;        
+        const tag = parent.tag;
+        if (tag && (tag === Component || tag.prototype instanceof Component)) {
+            ret = parent.children;
             if (isUntil) break;
         }
         parent = parent.parentVNode;
@@ -142,24 +151,121 @@ export function getTransition(feedback) {
     const vertical = feedback.vertical;
     if (feedback.important=== 'horizontal') {
         if (horizontal === 'left') {
-            return 'slideright';
+            return 'c-slideright';
         } else if (horizontal === 'right') {
-            return 'slideleft';
+            return 'c-slideleft';
         } else if (vertical === 'bottom') {
-            return 'slideup';
+            return 'c-slideup';
         } else if (vertical === 'top') {
-            return 'slidedown';
+            return 'c-slidedown';
         }
     } else {
         if (vertical === 'bottom') {
-            return 'slideup';
+            return 'c-slideup';
         } else if (vertical === 'top') {
-            return 'slidedown';
+            return 'c-slidedown';
         } else if (horizontal === 'left') {
-            return 'slideright';
+            return 'c-slideright';
         } else if (horizontal === 'right') {
-            return 'slideleft';
+            return 'c-slideleft';
         }
     }
-    return 'slidedown';
+    return 'c-slidedown';
+}
+
+export function mapChildren(children, callback) {
+    const vNodes = [];
+    function map(children) {
+        if (!children) return;
+        if (!Array.isArray(children)) {
+            return vNodes.push(callback(children));
+        }
+        children.forEach(vNode => {
+            if (Array.isArray(vNode)) {
+                map(vNode);
+            } else if (vNode) {
+                vNodes.push(callback(vNode));
+            }
+        });
+    }
+
+    map(children);
+
+    return vNodes;
+}
+
+export const expandAnimationCallbacks = {
+    'a:transition': 'c-expand',
+    'ev-a:leaveStart': (el) => el.style.height = el.clientHeight + 'px',
+    'ev-a:leave': (el) => el.style.height = 0,
+    'ev-a:enterStart': (el) => {
+        el._height = el.clientHeight + 'px';
+        el.style.height = 0;
+    },
+    'ev-a:enter': (el) => el.style.height = el._height,
+    'ev-a:enterEnd': (el) => el.style.height = '',
+};
+
+export function toggleArray(arr, value) {
+    if (!Array.isArray(arr)) {
+        return [value];
+    } else {
+        arr = arr.slice(0);
+        const index = arr.indexOf(value);
+        if (~index) {
+            arr.splice(index, 1);
+        } else {
+            arr.push(value);
+        }
+        return arr;
+    }
+}
+
+export function isNumber(n) {
+    return typeof n === 'number';
+}
+
+let raf;
+if (typeof window !== 'undefined') {
+    raf = window.requestAnimationFrame ? 
+        window.requestAnimationFrame.bind(window) : setTimeout;
+}
+export function nextFrame(fn) {
+    raf(fn);
+}
+
+export function throttle(fn, delay) {
+    let timer;
+    return function() {
+        const args = arguments;
+        const context = this;
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            fn.apply(context, args);
+        }, delay);
+    };
+}
+
+export const browser = {};
+if (typeof navigator !== 'undefined') {
+    const ua = navigator.userAgent.toLowerCase();
+    const index = ua.indexOf('msie ');
+    if (~index) {
+        browser.isIE = true;
+        const version = parseInt(ua.substring(index + 5, ua.indexOf('.', index)), 10);
+        browser.version = version;
+        browser.isIE8 = version === 8;
+    } else if (~ua.indexOf('trident/')) {
+        browser.isIE = true;
+        const rv = ua.indexOf('rv:');
+        browser.version = parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10);
+    } else if (~ua.indexOf('edge')) {
+        browser.isEdge = true;
+    } else if (~ua.indexOf('safari')) {
+        if (~ua.indexOf('chrome')) {
+            browser.isChrome = true;
+        } else {
+            browser.isSafari = true;
+        }
+    }
 }

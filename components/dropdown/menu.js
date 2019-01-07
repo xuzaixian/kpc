@@ -2,17 +2,30 @@ import Intact from 'intact';
 import template from './menu.vdt';
 import position from '../moveWrapper/position';
 import {findParentComponent, getTransition} from '../utils';
+import Dropdown from './dropdown';
 
 export default class DropdownMenu extends Intact {
     @Intact.template()
     static template = template;
 
+    static propTypes = {
+        value: Boolean,
+        trigger: ['hover', 'click'],
+        position: Object,
+        transition: String,
+        // Event is undefined in NodeJs
+        of: ['self', 'parent', Object/* Intact Event */, typeof Event === 'undefined' ? undefined : Event],
+        container: [String, Function],
+    }
+
     defaults() {
         return {
-            show: false,
+            value: false,
             trigger: 'hover',
             position: {},
-            transition: 'slidedown',
+            transition: 'c-slidedown',
+            of: 'self', // self | parent
+            container: undefined,
         };
     }
 
@@ -21,15 +34,50 @@ export default class DropdownMenu extends Intact {
         this.items = [];
         this.focusIndex = -1;
         this.locked = false;
+
+        this.on('$changed:value', (c, value) => {
+            if (value) {
+                this.trigger('show', this);
+            } else {
+                this.trigger('hide', this);
+            }
+        });
+        this.on('$changed:of', () => {
+            if (this.get('value')) {
+                this.position();
+            }
+        });
     }
 
     _mount() {
         const parent = this._findParentDropdownMenu();
         if (parent) parent.subDropdowns.push(this);
 
-        if (this.get('show')) {
-            this._addDocumentEvents();
+        // because the DropdownMenu can be changed by key
+        // and it can not be found in Dropdown
+        // so we handle it here again
+        if (!this.dropdown) {
+            // for contextmenu usage
+            // 1. the parentVNode is undefined in vue
+            if (!this.parentVNode) return;
+
+            // 2. the children of parentVNode does not contain Dropdown
+
+            // the previous sibling is Dropdown
+            const siblings = this.parentVNode.children;
+            if (!Array.isArray(siblings)) return;
+            const index = siblings.indexOf(this.vNode);
+            const dropdown = siblings[index - 1];
+            if (dropdown && dropdown.tag === Dropdown) {
+                this.dropdown = dropdown.children;
+                this.dropdown.menu = this.vNode;
+            }
         }
+
+        // if (this.get('show')) {
+            // this._onShow();
+            // this.show();
+        // }
     }
 
     _findParentDropdownMenu() {
@@ -38,9 +86,20 @@ export default class DropdownMenu extends Intact {
 
     show() {
         clearTimeout(this.timer);
-        this.set('show', true);
+        this.set('value', true);
         const parent = this._findParentDropdownMenu();
         if (parent) {
+            const showedMenu = parent._showedMenu;
+            if (showedMenu && showedMenu !== this) {
+                showedMenu.hide(true);
+            }
+            parent._showedMenu = this;
+            // hide last showed menu will unlock the parent
+            // so we lock it here when show this menu
+            parent.locked = true;
+
+            // because parent will hide when click outside
+            // we call parent show method to clear the timer of hiding
             parent.show();
         }
     }
@@ -48,27 +107,63 @@ export default class DropdownMenu extends Intact {
     hide(immediately) {
         if (!immediately) {
             this.timer = setTimeout(() => {
-                this.set('show', false);
+                this.set('value', false);
             }, 200);
         } else {
-            this.set('show', false);
+            this.set('value', false);
         }
     }
 
     toggle() {
-        this.set('show', !this.get('show'));
+        this.set('value', !this.get('value'));
     }
 
     position() {
-        position(this.refs.menu.element, {
-            my: 'center top+5', 
-            at: 'center bottom', 
-            of: this.dropdown.element,
-            using: (feedback) => {
-                this.set('transition', getTransition(feedback));
-            },
-            ...this.get('position')
-        });
+        // if the dropdown menu is nested, then show the parent first
+        // and show the child menu later
+        const p = (_of, transition) => {
+            let using;
+            position(this.refs.menu.element, {
+                my: 'center top+8', 
+                at: 'center bottom', 
+                of: _of,
+                using: (feedback) => {
+                    using = () => {
+                        // let the child menu has the same transition with parent menu
+                        this.set('transition', transition || getTransition(feedback));
+                        using = null;
+                    } 
+                    // if it is the first menu, getTransition immediately
+                    if (!transition) {
+                        using();
+                    }
+                },
+                ...this.get('position')
+            });
+            this.positioned = true;
+            this.trigger('positioned', transition);
+            using && using();
+        }
+
+        let _of = this.get('of');
+        if (_of  === 'parent') {
+            const parent = this._findParentDropdownMenu();
+            if (parent) {
+                _of = parent.refs.menu.element;
+                if (parent.positioned) {
+                    p(_of);
+                } else {
+                    parent.one('positioned', (transition) => {
+                        p(_of, transition || parent.get('transition'));
+                    });
+                }
+            }
+        } else if (_of === 'self') {
+            _of = this.dropdown.element;
+            p(_of);
+        } else {
+            p(_of);
+        }
     }
 
     _onShow() {
@@ -80,6 +175,9 @@ export default class DropdownMenu extends Intact {
     _addDocumentEvents() {
         const parent = this._findParentDropdownMenu();
         if (!parent) {
+            // no matter what the trigger is
+            // we should let the layer hide when click document. #52
+
             // if (this.get('trigger') === 'click') {
                 document.addEventListener('click', this._onDocumentClick);
             // }
@@ -91,6 +189,7 @@ export default class DropdownMenu extends Intact {
     }
 
     _removeDocumentEvents() {
+        this.positioned = false;
         const parent = this._findParentDropdownMenu();
         if (!parent) {
             // if (this.get('trigger') === 'click') {
@@ -104,8 +203,13 @@ export default class DropdownMenu extends Intact {
     }
 
     _onDocumentClick(e) {
+        // in IE, if the event has not call stopImmediatePropagation,
+        // the document click will also be called after it has been removed
+        const _menu = this.refs.menu;
+        if (!_menu) return;
+
         const target = e.target;
-        const menu = this.refs.menu.element;
+        const menu = _menu.element;
 
         // is a dropdown menu
         if (menu === target || menu.contains(target)) return;
@@ -146,19 +250,19 @@ export default class DropdownMenu extends Intact {
     }
 
     _focusNextItem(e) {
-        const parent = this._findParentDropdownMenu();
-        if (parent && this.focusIndex < 0) {
-            return;
-        }
+        // const parent = this._findParentDropdownMenu();
+        // if (parent && this.focusIndex < 0) {
+            // return;
+        // }
         e.preventDefault();
         this.focusItemByIndex(this.focusIndex + 1, 'down');
     }
 
     _focusPrevItem(e) {
-        const parent = this._findParentDropdownMenu();
-        if (parent && this.focusIndex < 0) {
-            return;
-        }
+        // const parent = this._findParentDropdownMenu();
+        // if (parent && this.focusIndex < 0) {
+            // return;
+        // }
         e.preventDefault();
         this.focusItemByIndex(this.focusIndex - 1, 'up');
     }
@@ -166,7 +270,8 @@ export default class DropdownMenu extends Intact {
     focusItemByIndex(index, direction = 'down') {
         const items = this.items;
         const max = items.length - 1;
-        const oldIndex = this.focusIndex;
+
+        this.unFocusLastItem();
 
         function fixIndex(index) {
             if (index > max) {
@@ -190,18 +295,24 @@ export default class DropdownMenu extends Intact {
 
         this.focusIndex = index;
 
+        items[index].focus();
+    }
+
+    unFocusLastItem() {
+        const oldIndex = this.focusIndex;
+        const items = this.items;
+
         if (oldIndex > -1 && items[oldIndex]) {
             items[oldIndex].unFocus();
+            this.focusIndex = -1;
         }
-
-        items[index].focus();
     }
 
     _selectItem(e) {
         this._showSubMenu(e);
         if (this.focusIndex > -1) {
             e.preventDefault();
-            this.items[this.focusIndex].select();
+            this.items[this.focusIndex] && this.items[this.focusIndex].select(e);
         }
     }
 
@@ -213,7 +324,8 @@ export default class DropdownMenu extends Intact {
         if (parent && this.focusIndex < 0) {
             this.focusItemByIndex(0);
         } else if (this.focusIndex > -1) {
-            this.items[this.focusIndex].showMenuAndFocus();
+            // maybe the items has been filtered, #50
+            this.items[this.focusIndex] && this.items[this.focusIndex].showMenuAndFocus();
         }
     }
 

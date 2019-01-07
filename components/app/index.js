@@ -3,54 +3,55 @@ import template from './index.vdt';
 import '../../styles/kpc.styl';
 import './index.styl';
 
-let serverStyleCleanup;
-if (process.ssr) {
-    serverStyleCleanup = require('node-style-loader/clientCleanup');
-}
-
 export default class App extends Intact {
     @Intact.template()
     get template() { return template; }
+
+    static propTypes = {
+        loading: Boolean,
+    };
 
     defaults() {
         return {
             view: undefined,
             container: undefined,
             loading: false,
+            ssr: false,
         };
     }
 
     showLoading() {
-        this.set('loading', true);
+        this.set('loading', true, {async: true});
     }
 
     hideLoading() {
-        this.set('loading', false);
+        this.set('loading', false, {async: true});
     }
 
     _init() {
-        if (!process.ssr && process.browser) {
+        if (!this.get('ssr') && this.get('container')) {
             Intact.mount(this, this.get('container'));
         }
     }
 
-    render(Page, data) {
+    _render(Page, data, string) {
         this._current = Page;
         return new Promise((resolve, reject) => {
-            if (!process.ssr && process.node) return reject();
-
             const page = new Page(data);
-            // for debug
-            if (process.browser) {
-                window.__page = page;
-            }
             page.$app = this;
+
+            // for debug
+            global.__page = page;
 
             const done = () => {
                 if (this._current === Page) {
                     this.set('view', page);
                 }
-                resolve();
+                if (string) {
+                    resolve(this.toString());
+                } else {
+                    resolve();
+                }
             }
             
             if (page.inited) {
@@ -61,12 +62,18 @@ export default class App extends Intact {
         });
     }
 
-    load(Page, data) {
-        return this.render(Page, data).then(() => {
-            if (process.ssr && process.browser && !this.rendered) {
+    render(Page, data) {
+        return this._render(Page, data, true);
+    }
+
+    load(Page, data, cleanup) {
+        this.showLoading();
+        return this._render(Page, data, false).then(() => {
+            if (this.get('ssr') && !this.rendered) {
                 Intact.hydrate(this, this.get('container'));
-                serverStyleCleanup();
+                cleanup && cleanup();
             }
+            this.hideLoading();
         });
     }
 }

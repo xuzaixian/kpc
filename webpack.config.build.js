@@ -15,13 +15,14 @@ module.exports = function(theme) {
         'module.rules.use': 'replace'
     })(webpackConfig, {
         entry: {
-            kpc: './components/index.js',
+            kpc: './index.js',
         },
         output: {
             path: path.resolve(__dirname, './dist'),
             filename: '[name].js',
             library: 'Kpc',
             libraryTarget: 'umd',
+            publicPath: '',
         },
         externals: {
             intact: {
@@ -45,6 +46,10 @@ module.exports = function(theme) {
     });
 
     config.plugins = [
+        // disable code splitting 
+        new webpack.optimize.LimitChunkCountPlugin({
+            maxChunks: 1,
+        }),
         new webpack.DefinePlugin({
             'process.browser': true
         }),

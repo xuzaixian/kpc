@@ -7,22 +7,69 @@ order: 12
 
 ```vdt
 import Table from 'kpc/components/table';
-var scheme1 = {a: '默认不可拖拽', b: '表头B'};
-var scheme2 = {a: '设置为可拖拽', b: '表头B'};
-var data1 = [{a: 'A', b: 'B'}, {a: 'A', b: 'B'}];
+import {Form, FormItem} from 'kpc/components/form';
 
+const {data} = self.get();
 
 <div class='no-data-template'>
-    <Table scheme={{ scheme1 }} data={{ data1 }} />
-    <Table scheme={{ scheme2 }} data={{ data1 }} resizable={{ true }}/>
-
+    <Table 
+        scheme={{ {
+            a: {
+                title: '通过minColWidth控制最小宽度100px',
+                width: '50%',
+            },
+            b: {
+                title: '单独设置最小宽度300px',
+                minWidth: 300,
+                width: '10%'
+            },
+            c: {
+                title: '标题',
+                width: '40%',
+            }
+        } }} 
+        data={{ data }}
+        resizable
+        minColWidth={{ 100 }}
+    />
+    <Form style="margin-top: 20px;">
+        <FormItem style="width: 100%">
+            <b:label><div style="width: 140px">table in table-cell</div></b:label>
+            <Table 
+                fixHeader
+                scheme={{ {
+                    a: {
+                        title: '通过minColWidth控制最小宽度100px',
+                        width: '50%',
+                    },
+                    b: {
+                        title: '单独设置最小宽度300px',
+                        minWidth: 300,
+                        width: '10%'
+                    },
+                    c: {
+                        title: '标题',
+                        width: '40%',
+                    }
+                } }} 
+                data={{ data }}
+                resizable
+                minColWidth={{ 100 }}
+            />
+        </FormItem>
+    </Form>
 </div>
 ```
 
+```js
+export default class extends Intact {
+    @Intact.template()
+    static template = template;
 
-
-
-
-
-
-
+    defaults() {
+        return {
+            data: [{a: 'A', b: 'B', c: 'C'}, {a: 'A', b: 'B', c: 'C'}]
+        }
+    }
+}
+```

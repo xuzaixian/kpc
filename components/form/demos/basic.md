@@ -26,6 +26,16 @@ order: 0
 3. 给`FormItem`添加`messages`属性，指定验证失败时展示的错误内容。默认内容如上所示
 4. 给`FormItem`添加`classNames`属性，指定验证失败时错误元素需要额外添加的className，默认不添加
 
+表单验证通过会触发`submit`事件（不通过不会触发），我们可以绑定该事件来提交数据。或者我们也可以
+手动调用`Form`的`validate()`方法来验证，该函数为异步函数，返回`true`或`false`来标示验证是否通过。
+另外，验证失败时，可以通过`Form`的`getFirstInvalidFormItem()`方法来获取第一条出错的`FormItem`
+
+> 验证的字段名必须是当前上下文对象上的直接属性名，在循环中我们必须通过索引来拼接取值路径字符串，
+> 例如：`"users.0.phone"`
+
+> React下，需要往子组件注入当前上下文`_context`，因为`FormItem`需要从当前上下文获取待验证的值，
+> 详见下面`index.jsx`示例文件
+
 ```vdt
 import {Form, FormItem} from 'kpc/components/form';
 import {Input} from 'kpc/components/input';
@@ -35,8 +45,9 @@ import {Radio} from 'kpc/components/radio';
 import {ButtonGroup, Button} from 'kpc/components/button';
 import {Switch} from 'kpc/components/switch';
 import {Slider} from 'kpc/components/slider';
+import {Datepicker} from 'kpc/components/datepicker';
 
-<Form ev-submit={{ self.submit }} ref="form">
+<Form ev-submit={{ self.submit }} ref="form" labelWidth="200">
     <FormItem label="Input" model="model.input" rules={{ {required: true} }}>
         <Input v-model="model.input" />
     </FormItem>
@@ -76,11 +87,14 @@ import {Slider} from 'kpc/components/slider';
             <Button value="C++">C++</Button>
         </ButtonGroup>
     </FormItem>
-    <FormItem label="Switch">
+    <FormItem label="Switch" model="model.switch">
         <Switch v-model="model.switch" />
     </FormItem>
     <FormItem model="model.slider" rules={{ {required: true, min: 1} }} label="Slider">
         <Slider v-model="model.slider" isShowInput={{ false }} />
+    </FormItem>
+    <FormItem model="model.date" rules={{ {required: true} }} label="Datepicker">
+        <Datepicker v-model="model.date" />  
     </FormItem>
     <FormItem label="Textarea" model="model.textarea"
         rules={{ {required: true} }}
@@ -98,24 +112,30 @@ import {Slider} from 'kpc/components/slider';
         <Input type="password" v-model="model.confirmPassword" />
     </FormItem>
     <FormItem>
-        <Button type="primary" htmlType="submit">提交</Button>
+        <Button type="primary" htmlType="submit" ev-click={{ self.handleSubmit }}>提交</Button>
         <Button style="margin-left: 20px" ev-click={{ self.reset }}>重置</Button>
     </FormItem>
 </Form>
 ```
 
 ```styl
-.k-form-item
-    > .k-label
-        width 150px
 .k-slider
 .k-select
     width 300px
 .k-radio
 .k-checkbox
     margin-right 10px
-.k-slider
-    margin-top 15px
+
+@media (max-width: 768px) 
+    .k-form-item
+        width 100%
+        .k-input
+        .k-select
+        .k-datepicker
+        .k-slider
+            width 100%
+        .k-label
+            width 100px !important
 ```
 
 ```js
@@ -138,9 +158,82 @@ export default class extends Intact {
         console.log(this.get('model'));
     }
 
+    async handleSubmit() {
+        if (await this.refs.form.validate()) {
+            console.log('验证通过，开始提交');
+        } else {
+            // 验证失败，我们可以获取第一条出错的FormItem
+            console.log(this.refs.form.getFirstInvalidFormItem());
+        }
+    }
+
     reset() {
         this.refs.form.reset();
         console.log(this.get('model'));
+    }
+}
+```
+
+```vue-data
+data() {
+    return {
+        model: {
+            checkbox: [],
+        }
+    }
+},
+```
+
+```jsx
+import React from 'react';
+import {Form, FormItem} from 'kpc/components/form';
+import {Input} from 'kpc/components/input';
+import Message from 'kpc/components/message';
+
+export default class extends React.Component {
+    // *********
+    // 注入_context上下文
+    static childContextTypes = {
+        _context: () => {}
+    }
+
+    getChildContext() {
+        return {
+            _context: this
+        }
+    }
+    // *********
+
+    constructor(props) {
+        super(props);
+        this.state = {model: {}};
+
+        this.submit = this.submit.bind(this);
+        this.onChangeInput = this.onChangeInput.bind(this);
+    }
+
+    submit() {
+        Message.success('验证通过，开始提交');
+        console.log(this.state.model);
+    }
+    
+    onChangeInput(c, v) {
+        this.setState({
+            model: {
+                ...this.state.model,
+                input: v
+            }
+        });
+    }
+
+    render() {
+        return (
+            <Form onSubmit={this.submit} ref={i => this.form = i} labelWidth="200">
+                <FormItem label="Input" model="model.input" rules={{required: true}}>
+                    <Input value={this.state.model.input} on$change-value={this.onChangeInput} />
+                </FormItem>
+            </Form>
+        );
     }
 }
 ```

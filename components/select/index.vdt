@@ -1,71 +1,47 @@
 import Input from '../input';
 import Dropdown, {DropdownItem, DropdownMenu} from '../dropdown';
-import {isStringOrNumber, getTextByChildren, addStyle} from '../utils';
+import {isStringOrNumber, getTextByChildren, addStyle, _$} from '../utils';
 import Option from './option';
 import OptionGroup from './group';
+import {Tabs, Tab} from '../tabs';
 
 const {
     className, clearable, data, value, multiple,
     disabled, filterable, keywords, _show,
     placeholder, size, style, name, children,
-    fluid, width,
+    fluid, width, allowUnmatch, card, hideIcon,
+    container, inline
 } = self.get();
+
+let _activeLabel = self.get('_activeLabel');
+
+const _placeholder = placeholder == null ?
+    (allowUnmatch && filterable) ? _$('请输入或选择') : _$('请选择') :
+    placeholder;
 
 const classNameObj = {
     'k-select': true,
     [className]: className,
+    [scope.className]: scope.className,
     'k-disabled': disabled,
     'k-show': _show,
     'k-clearable': clearable,
     [`k-${size}`]: size !== 'default',
     'k-fluid': fluid,
+    'k-with-prefix': blocks.prefix,
+    'k-with-suffix': !hideIcon,
+    'k-inline': inline,
 };
 
 let hasValue = value != null && (!multiple && value !== '' || multiple && value.length);
 const isGroup = Array.isArray(self.get('data.0.data'));
 
-let label;
-let labels = [];
-
-const handleProps = props => {
-    let active = false;
-    let valid = false;
-
-    if (!multiple) {
-        if (props.value === value) {
-            // set label
-            label = props.label;
-            active = true;
-        } else {
-            active = false;
-        }
-    } else if (Array.isArray(value)) {
-        const index = value.indexOf(props.value);
-        if (~index) {
-            // keep order consistent
-            labels[index] = props.label;
-            active = true;
-        } else {
-            active = false;
-        }
-    }
-
-    let tmp;
-    if (
-        !filterable && 
-        props.label || 
-        keywords == null || 
-        ~props.label.toLowerCase().indexOf((tmp = keywords.toLowerCase())) || 
-        (
-            isStringOrNumber(props.value) && 
-            ~String(props.value).toLowerCase().indexOf(tmp)
-        )
-    ) {
-        valid = true; 
-    }
-
-    return {active, valid};
+const labelObj = scope.labelObj || {
+    // only show value as label when allowUnmatch is true, #40
+    label: allowUnmatch && isStringOrNumber(value) ? value : null,
+    labels: [],
 };
+let groupIndex = 0;
 
 const Options = props => {
     const data = props.data;
@@ -74,7 +50,8 @@ const Options = props => {
         // deprecate text, use label instead of
         if (item.text) item.label = item.text;
         
-        const {valid, active} = handleProps(item);
+        const {valid, active} = self.handleProps(item, labelObj);
+
         if (valid) {
             ret.push(
                 <DropdownItem 
@@ -84,6 +61,14 @@ const Options = props => {
                     hideOnSelect={{ !multiple }}
                 >{{ item.template ? item.template(item, index) : item.label }}</DropdownItem>
             );
+
+            // for card type groups, we need to highlight the parent label
+            if (active && card) {
+                if (_activeLabel == null && _show) {
+                    _activeLabel = groupIndex;
+                    self._setActiveLabelSilent(_activeLabel);
+                }
+            }
         }
     });
 
@@ -99,9 +84,9 @@ const OptionsVNodes = ({children}) => {
                 'ev-select': self._onSelect.bind(self, props.value),
                 hideOnSelect: !multiple,
                 label: props.label || getTextByChildren(props.children),
-                children: props.children || props.label 
+                children: props.children || props.label ,
             };
-            const {active, valid} = handleProps(props);
+            const {active, valid} = self.handleProps(props, labelObj);
             if (!valid) {
                 return <!---->;
             } else {
@@ -109,6 +94,23 @@ const OptionsVNodes = ({children}) => {
                     [props.className]: props.className,
                     'k-active': active,
                 });
+            }
+
+            // for card type groups, we need to highlight the parent label
+            if (active && card) {
+                if (_activeLabel == null && _show) {
+                    _activeLabel = groupIndex;
+                    self._setActiveLabelSilent(_activeLabel);
+                }
+            }
+
+            // if the multiple select option is active
+            // add a √ icon
+            if (active && multiple) {
+                props.children = [
+                    props.children,
+                    <i class="k-checkmark ion-ios-checkmark-empty"></i>
+                ];
             }
 
             // return the cloned vNode
@@ -119,6 +121,7 @@ const OptionsVNodes = ({children}) => {
                 ...props,
                 children: <OptionsVNodes>{{ props.children }}</OptionsVNodes>
             };
+            groupIndex++;
             return h(OptionGroup, props);
         }
 
@@ -126,79 +129,154 @@ const OptionsVNodes = ({children}) => {
     }); 
 } 
 
-const Menu = (
-    <DropdownMenu ev-$changed:show={{ self._position }}
+const labelList = [];
+
+const Menu = scope.Menu || (
+    <DropdownMenu ev-$changed:value={{ self._position }}
         ref="menu"
-        class="k-select-dropdown"
-        ev-$change:show={{ self._onChangeShow }}
-    >
-        <Options v-if={{ !isGroup }} data={{ data }} />
-        <OptionGroup v-else v-for={{ data }} label={{ value.label }}>
-            <Options data={{ value.data }} />
-        </OptionGroup>
-        <OptionsVNodes>{{ children }}</OptionsVNodes>
-    </DropdownMenu>
+        class={{ {
+            "k-select-dropdown": true,
+            "k-card": card,
+        } }}
+        ev-$change:value={{ self._onChangeShow }}
+    >{{ do {
+        const _children = [];
+        if (!isGroup) {
+            _children.push(<Options data={{ data }} />);
+        } else {
+            _children.push(
+                <OptionGroup v-for={{ data }} label={{ value.label }}>
+                    <Options data={{ value.data }} parentLabel={{ value.label }} />
+                </OptionGroup>
+            );
+        }
+        _children.push(<OptionsVNodes>{{ children }}</OptionsVNodes>);
+
+        // if it is card type group, we extract the label as navBar
+        if (card) {
+            const vNodes = [];
+            let index = 0;
+            function flatten(children) {
+                children.forEach(vNode => {
+                    if (Array.isArray(vNode)) {
+                        flatten(vNode);
+                    } else if (vNode) {
+                        if (vNode.tag === OptionGroup) {
+                            const props = vNode.props;
+                            const label = (props._blocks || {}).label || props.label;
+                            labelList.push({label});
+                            vNode.props = {...props, _card: true};
+
+                            // if the _activeLabel is undefined
+                            // we active the first label
+                            if (_activeLabel == null && _show) {
+                                _activeLabel = index;
+                                self._setActiveLabelSilent(index);
+                            }
+
+                            // only render the active options
+                            if (_activeLabel === index) {
+                                vNodes.push(vNode);
+                            }
+                            index++;
+                        } else {
+                            vNodes.push(vNode);
+                        }
+                    }
+                });
+            }
+            flatten(_children);
+            [ 
+                <Tabs vertical type="border-card" v-model="_activeLabel">
+                    <Tab v-for={{ labelList }} value={{ key }}>
+                        {{ typeof value.label === 'function' ? 
+                            // pass by block
+                            value.label(() => {}) :
+                            // pass by property
+                            value.label
+                        }}
+                    </Tab>
+                </Tabs>,
+                <div class="k-groups">{{ vNodes }}</div>
+            ];
+        } else {
+            _children;
+        }
+    } }}</DropdownMenu>
 );
 
 // if the value is not in options, then set hasValue to false
-if (hasValue && !label && !labels.length) {
+if (hasValue && labelObj.label == null && !labelObj.labels.length) {
     hasValue = false;
+    // if this is a value, but the value does not exist in options
+    // we set it to empty, #41
+    self._clearValue();
 }
 
-<div class={{ {...classNameObj, 'k-active': hasValue} }}
+<div class={{ {...classNameObj, 'k-has-value': hasValue} }}
     style={{ width != null ? addStyle(style, {width: `${width}px`}) : style }} 
+    tabindex={{ disabled ? "-1" : "0" }}
+    ev-keypress={{ self._onKeypress }}
+    ev-keydown={{ self._onKeydown }}
 >
     <Dropdown
-        position={{ {my: 'left top', at: 'left bottom'} }} 
+        position={{ {my: 'left top+8', at: 'left bottom'} }} 
         trigger="click"
         disabled={{ disabled }}
+        ref="dropdown"
+        container={{ container }}
     >
-        <div class="k-wrapper" ev-click={{ self._focusInput }}>
-            <input type="hidden" value={{ value }} name={{ name }} />
-            <Input v-if={{ !multiple && filterable }}
-                value={{ keywords == null ? label : keywords }}
-                ev-input={{ self._onSearch }}
-                ev-blur={{ self._onBlur }}
-                ev-focus={{ self._selectInput }}
-                disabled={{ disabled }}
-                placeholder={{ placeholder }}
-                ref="input"
-                size={{ size }}
-                fluid
-            />
-            <span class="k-placeholder c-ellipsis" v-else-if={{ !filterable && !hasValue }}>{{ placeholder }}</span>
-            <span class="k-value c-ellipsis" v-else-if={{ !multiple }}>{{ label }}</span>
-            <Animate a:tag="span" a:disabled class="k-values" v-else>
-                <Animate a:tag="span" class="k-tag" 
-                    v-for={{ labels }} 
-                    v-for-value="item"
-                    v-for-key="index"
-                    key={{ value[index] }}
-                    a:transition="fade"
-                >
-                    <span class="k-text">{{ item }}</span>
-                    <i class="k-icon ion-ios-close-empty"
-                        ev-click={{ self._delete.bind(self, value[index]) }}
-                    ></i>
-                </Animate>
-                <Input v-if={{ filterable }}
-                    value={{ keywords }}
+        <div class="k-wrapper" ev-click={{ self._focusInput }} tabindex="-1" ref="wrapper">
+            <div class="k-prefix" v-if={{ blocks.prefix }}>
+                <b:prefix />
+            </div>
+            <div class="k-main">
+                <input type="hidden" value={{ value }} name={{ name }} />
+                <Input v-if={{ !multiple && filterable }}
+                    value={{ keywords == null ? labelObj.label : keywords }}
                     ev-input={{ self._onSearch }}
                     ev-blur={{ self._onBlur }}
-                    ev-focus={{ self._onFocus }}
+                    ev-focus={{ self._selectInput }}
                     disabled={{ disabled }}
-                    placeholder={{ !hasValue ? placeholder : '' }}
+                    placeholder={{ _placeholder }}
                     ref="input"
-                    autoWidth
                     size={{ size }}
+                    fluid
                 />
-            </Animate>
-            <span class="k-suffix">
+                <span class="k-placeholder c-ellipsis" v-else-if={{ !filterable && !hasValue }}>{{ _placeholder }}</span>
+                <span class="k-value c-ellipsis" v-else-if={{ !multiple }}>{{ labelObj.label }}</span>
+                <Animate a:tag="span" a:disabled class="k-values" v-else>
+                    <Animate a:tag="span" class="k-select-tag" 
+                        v-for={{ labelObj.labels }} 
+                        v-for-value="item"
+                        v-for-key="index"
+                        key={{ value[index] }}
+                        a:transition="c-fade"
+                    >
+                        <span class="k-text">{{ item }}</span>
+                        <i class="k-icon ion-ios-close-empty"
+                            ev-click={{ self._delete.bind(self, value[index]) }}
+                        ></i>
+                    </Animate>
+                    <Input v-if={{ filterable }}
+                        value={{ keywords }}
+                        ev-input={{ self._onSearch }}
+                        ev-blur={{ self._onBlur }}
+                        ev-focus={{ self._onFocus }}
+                        disabled={{ disabled }}
+                        placeholder={{ !hasValue ? _placeholder : '' }}
+                        ref="input"
+                        autoWidth
+                        size={{ size }}
+                    />
+                </Animate>
+            </div>
+            <span class="k-suffix" v-if={{ !hideIcon || clearable }}>
                 <i v-if={{ clearable }}
                     class={{ {"k-clear ion-ios-close": true, "k-show": hasValue} }}
                     ev-click={{ self._onClear }}
                 ></i>
-                <i class="k-arrow ion-arrow-down-b"></i>
+                <i class="k-arrow ion-arrow-down-b" v-if={{ !hideIcon }}></i>
             </span>
         </div>{{ 
         Menu 

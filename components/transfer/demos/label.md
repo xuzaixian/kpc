@@ -6,23 +6,29 @@ order: 1
 通过`label`属性，可以自定义列表渲染逻辑。此时如果你需要启动列表过滤功能`filterable`，
 需要通过`filter`属性，指定自定义过滤函数。
 
+全选和`filterable`一起作用时，交互逻辑如下：
+
+1. 左侧未过滤，全选则选中所有非`disabled`的选项
+2. 左侧已过滤，全选则选中当前过滤出的非`disabled`的选项
+3. 左侧先全选，再过滤，过滤掉的选项保持选中状态
+
+
 ```vdt
 import Transfer from 'kpc/components/transfer';
 
 <Transfer data={{ self.get('data') }} 
-    label={{ (data, index, type) => {
-        return <div>
+    filter={{ self.filter }}
+    filterable
+    keyName="name"
+    ref="__test"
+>
+    <b:label params="data, index, type">
+        <div>
             <div>{{ data.name }}</div>
             <p>{{ data.desc }} | {{ data.ip }}</p>
         </div>
-    } }}
-    filter={{ (data, keywords) => {
-        return data.name.includes(keywords) || 
-            data.desc.includes(keywords) ||
-            data.ip.includes(keywords);
-    } }}
-    filterable
-/>
+    </b:label>
+</Transfer>
 ```
 
 ```styl
@@ -47,6 +53,12 @@ export default class extends Intact {
                 {name: '主机名4', desc: '前端服务器4', ip: '192.168.1.4'},
             ]
         }
+    }
+
+    filter(data, keywords) {
+        return data.name.includes(keywords) || 
+            data.desc.includes(keywords) ||
+            data.ip.includes(keywords);
     }
 }
 ```

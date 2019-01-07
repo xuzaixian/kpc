@@ -25,16 +25,17 @@ export default class Switch extends Intact {
     }
 
     static propTypes = {
+        name: String,
+        on: String,
+        off: String,
+        width: [Number, String],
+        height: [Number, String],
+        size: ['large', 'default', 'small', 'mini'],
         disabled: Boolean,
     }
 
-    _init() {
-        this._move = this._move.bind(this);
-        this._dragEnd = this._dragEnd.bind(this);
-    }
-
     _dragStart(e) {
-        if (e.which !== 1) return;
+        if (this.get('disabled') || e.which !== 1) return;
 
         this._x = e.clientX;
         this._height = this.refs.bar.clientHeight;
@@ -57,14 +58,15 @@ export default class Switch extends Intact {
     }
 
     _dragEnd(e) {
-        this.set('_dragging', false);
-
+        this.element.blur();
         const bar = this.refs.bar;
 
         // treat mousedown -> mouseup as click
         if (this._x === e.clientX) {
+            bar.style.width = '';
             this._toggle();
         } else {
+            // cancel this operation if the distance less than half of width
             const percent = (bar.clientWidth - this._height / 2) / this._maxWidth;
             
             if (!this.isChecked()) {
@@ -82,17 +84,30 @@ export default class Switch extends Intact {
             }
         }
 
+        this.set('_dragging', false);
+
         document.removeEventListener('mousemove', this._move);
         document.removeEventListener('mouseup', this._dragEnd);
     }
 
-    _toggle() {
+    _toggle(e, isKeypress) {
         if (this.get('disabled')) return;
+
+        // if is not keypress, we blur it to remove focus style
+        if (!isKeypress) {
+            this.element.blur();
+        }
 
         if (this.isChecked()) {
             this.uncheck();
         } else {
             this.check();
+        }
+    }
+
+    _onKeypress(e) {
+        if (e.keyCode === 13) {
+            this._toggle(e, true);
         }
     }
 

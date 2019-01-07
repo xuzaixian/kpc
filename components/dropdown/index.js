@@ -2,8 +2,6 @@ import Intact from 'intact';
 import Dropdown from './dropdown';
 import DropdownMenu from './menu';
 import DropdownItem from './item';
-import '../../styles/kpc.styl';
-import './index.styl';
 
 const h = Intact.Vdt.miss.h;
 
@@ -46,6 +44,8 @@ function Wrapper(props, inVue) {
             ...rest
         });
 }
+
+Wrapper.propTypes = Dropdown.propTypes;
 
 // Vue only support return one element from functional component,
 // so we wrap them. This will lead to damage the dom struction,

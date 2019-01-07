@@ -10,15 +10,22 @@ export default class Dialog extends Intact {
     static template = template;
 
     static propTypes = {
+        title: String,
         value: Boolean,
+        size: ['large', 'default', 'small', 'mini'],
         loading: Boolean,
+        disabledOk: Boolean,
+        okText: String,
+        cancelText: String,
+        ok: Function,
+        cancel: Function,
     };
 
     defaults() {
         return {
             title: _$('提示'),
             value: false,
-            size: 'default', // default | small
+            size: 'default', // large | default | small | mini
             loading: false,
             disabledOk: false,
             okText: _$('确认'),
@@ -82,8 +89,8 @@ export default class Dialog extends Intact {
         if (typeof callback === 'function') {
             callback.call(this, this);
         } else {
-            this.close();
             this.trigger('cancel', this);
+            this.close();
         }
     }
 
@@ -92,8 +99,8 @@ export default class Dialog extends Intact {
         if (typeof callback === 'function') {
             callback.call(this, this);
         } else {
-            this.close();
             this.trigger('ok', this);
+            this.close();
         }
     }
 
@@ -153,10 +160,8 @@ export default class Dialog extends Intact {
     }
 
     _dragStart(e) {
-        /* istanbul ignore next */ {
-        
         // left key
-        if (e.which !== 1) return;
+        if (e.which !== 1 || !this.get('value')) return;
 
         this.set('_dragging', true);
         const dialog = this.dialog;
@@ -167,12 +172,9 @@ export default class Dialog extends Intact {
 
         document.addEventListener('mousemove', this._move);
         document.addEventListener('mouseup', this._dragEnd);
-        /* istanbul ignore end */ }
     }
 
     _move(e) {
-        /* istanbul ignore next */
-
         // TODO; drag out of screen
         if (this.get('_dragging')) {
             const style = this.dialog.style;
@@ -192,7 +194,6 @@ export default class Dialog extends Intact {
     }
 
     _dragEnd() {
-        /* istanbul ignore if */
         if (this.get('_dragging')) {
             this.set('_dragging', false);
             document.removeEventListener('mousemove', this._move);

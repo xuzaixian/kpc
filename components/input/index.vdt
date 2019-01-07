@@ -1,10 +1,10 @@
-import {addStyle} from '../utils';
+import {addStyle, isTextChildren} from '../utils';
 
 const {
-    type, name, value, placeholder,
+    type, name, value, placeholder, tabindex,
     readonly, clearable, disabled, size, 
     rows, spellcheck, defaultValue, style,
-    className, autoWidth, fluid, width,
+    className, autoWidth, fluid, width, autocomplete,
 } = self.get();
 
 const classNameObj = {
@@ -39,9 +39,18 @@ const wrapperEvents = [
     style={{ width != null ? addStyle(style, {width: `${width}px`}) : style }} 
     {{ ...wrapperEvents }}
 >
-    <div class="k-prepend" v-if={{ blocks.prepend }}>
-        <b:prepend />
-    </div>
+    {{ do {
+        if (blocks.prepend) {
+            // if the children of this block is text node
+            // we add a padding to the wrapper node
+            // so we handle this block manually
+            const children = blocks.prepend.call(this, () => {});
+            <div class={{ {
+                "k-prepend": true, 
+                "k-padding": isTextChildren(children)
+            } }}>{{ children }}</div>
+        }
+    } }}
     <div class="k-wrapper">
         <div class="k-prefix" v-if={{ blocks.prefix }}>
             <b:prefix />
@@ -57,6 +66,8 @@ const wrapperEvents = [
             placeholder={{ placeholder }}
             disabled={{ disabled }}
             ref="input"
+            tabindex={{ tabindex }}
+            autocomplete={{ autocomplete }}
             {{ ...events }}
         />
         <textarea v-else 
@@ -71,6 +82,7 @@ const wrapperEvents = [
             ref="input"
             rows={{ rows }}
             spellcheck={{ spellcheck }}
+            tabindex={{ tabindex }}
             {{ ...events }}
         ></textarea>
         <div class="k-suffix" v-if={{ blocks.suffix || clearable }}>
@@ -80,14 +92,20 @@ const wrapperEvents = [
                     "k-show": value,
                 } }}
                 ev-click={{ self.clear }}
-            ></i>
+            ></i>{{ ' ' }}
             <b:suffix />
         </div>
         <div v-if={{ autoWidth }} class="k-fake"
             ref="fake"
         >{{ value == null || value === '' ? placeholder : value }}</div>
     </div>
-    <div class="k-append" v-if={{ blocks.append }}>
-        <b:append />
-    </div>
+    {{ do {
+        if (blocks.append) {
+            const children = blocks.append.call(this, () => {});
+            <div class={{ {
+                "k-append": true, 
+                "k-padding": isTextChildren(children)
+            } }}>{{ children }}</div>
+        }
+    } }}
 </div>

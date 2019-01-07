@@ -3,54 +3,40 @@ title: 基本用法
 order: 0
 ---
 
-`Tabs`的基本用法。需要使用`v-model`来指定选中标签。
-
+`Tab`的基本用法。`Tabs`嵌套`Tab`使用，使用`v-model`进行双向数据绑定。
 
 ```vdt
-import {Tabs, Tab} from 'components/tabs';
+import {Tabs, Tab} from 'kpc/components/tabs';
 
 <div>
-    <Tabs data={{ [
-        {
-            text: '入站规则',
-            value: 'rulein',
-        },
-        {
-            text: '出站规则',
-            value: 'ruleout',
-        },
-        {
-            text: '关联云主机',
-            value: 'relatedVM',
-        }
-    ] }} value="relatedVM"  style="margin: 20px;"/>
-
-    <Tabs v-model="tab2" style="margin: 20px;">
+    <Tabs v-model="tab">
         <Tab value="rulein">入站规则</Tab>
         <Tab value="ruleout">出站规则</Tab>
         <Tab value="relatedVM">关联云主机</Tab>
     </Tabs>
-    <div style="margin: 20px;" v-if={{ self.get('tab2') == 'rulein' }}>入站规则</div>
-    <div style="margin: 20px;" v-else-if={{ self.get('tab2') == 'ruleout' }}>出站规则</div>
-    <div style="margin: 20px;" v-else>关联云主机</div> 
-    
+
+    <div class="content">
+        <div v-if={{ self.get('tab') == 'rulein' }}>入站规则</div>
+        <div v-else-if={{ self.get('tab') == 'ruleout' }}>出站规则</div>
+        <div v-else>关联云主机</div> 
+    </div>
 </div>
-
 ```
-```js
 
+```styl
+.content
+    margin 20px
+```
+
+```js
 export default class extends Intact {
     @Intact.template()
     static template = template;
-    defaults(){
+
+    defaults() {
         return {
-            tab1:'',
-            tab2:'ruleout'
+            tab: 'ruleout',
         }
     }
 }
-```
-```styl
-.k-checkbox
-    margin-right 20px
 ```

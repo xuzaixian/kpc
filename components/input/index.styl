@@ -1,7 +1,6 @@
 @require('./variables.styl')
 
 .k-input
-    font-size $input-font-size
     display inline-block
     width $input-width
     vertical-align middle
@@ -12,42 +11,28 @@
     .k-inner
         display inline-block
         width 100%
-        font-size $input-font-size
-        height $input-height
         border $input-border 
-        padding $input-padding
         background-color $input-bg-color 
         transition border $transition, background $transition, box-shadow $transition 
         outline none
+        position relative
+        &:hover
+            border $input-hover-border
+            z-index 1
         &:focus
             border $input-focus-border
+            z-index 1
     // fluid
     &.k-fluid
         width 100%
 
-    // textarea
-    .k-textarea
-        padding $input-textarea-padding
-        height auto
-        line-height 1.5
-
     // prefix & suffix
-    &.k-with-prefix
-        .k-inner
-            padding-left $input-prefix-padding 
-    &.k-with-suffix
-    &.k-clearable
-        .k-inner
-            padding-right $input-suffix-padding 
     .k-prefix
     .k-suffix
         position absolute
         top 50%
         transform translateY(-50%)
-    .k-prefix
-        left ($input-prefix-padding / 3)
-    .k-suffix
-        right ($input-suffix-padding / 3)
+        z-index 2
 
     // clearable
     .k-clear
@@ -55,14 +40,9 @@
         opacity 0
         transition opacity $transition
         pointer-events none
+        color $input-clear-icon-color
         &:hover
             color $primary-color
-    &.k-with-suffix
-        .k-clear
-            margin-right $input-clear-margin-right
-    &.k-with-suffix.k-clearable
-        .k-inner
-            padding-right $input-suffix-padding + $input-clear-margin-right * 3
     .k-inner:focus + .k-suffix .k-clear.k-show
     &:hover .k-clear.k-show
         opacity 1
@@ -77,12 +57,27 @@
         display table-cell
         width 1px
         vertical-align middle
-        padding 0 $input-group-padding-horizontal
         background $input-group-bg-color 
         border $input-border
+        text-align center
         .k-btn
-            margin s('-1px -%s', unit(($input-group-padding-horizontal * 14 + 1) / 14, em))
+            margin -1px 0
             border-radius 0
+        // select
+        .k-select
+            margin -1px
+            text-align left
+    .k-prepend
+        .k-select
+            z-index 1
+            > .k-wrapper
+                border-radius $border-radius 0 0 $border-radius
+    .k-append
+        .k-select
+            > .k-wrapper
+                border-radius 0 $border-radius $border-radius 0
+    > .k-padding
+        padding 0 $input-group-padding-horizontal
     .k-prepend
         border-right none
         white-space nowrap
@@ -99,14 +94,43 @@
             border-color $input-disabled-border-color
             background $input-disabled-bg-color
             cursor not-allowed
-    
+
     // size
-    for size in small mini
-        &.k-{size}
+    generate(size)
+        font-size lookup('$input-' + size + '-font-size')
+        .k-inner
+            height lookup('$input-' + size + '-height')
+            line-height @height
             font-size lookup('$input-' + size + '-font-size')
-            .k-inner
-                height lookup('$input-' + size + '-height')
-                font-size lookup('$input-' + size + '-font-size')
+            if lookup('$input-' + size + '-padding-left-right')
+                padding 0 lookup('$input-' + size + '-padding-left-right')
+        if lookup('$input-' + size + '-padding-left-right')
+            .k-prefix
+                left lookup('$input-' + size + '-padding-left-right')
+            .k-suffix
+                right lookup('$input-' + size + '-padding-left-right')
+            &.k-with-prefix
+                .k-inner
+                    padding-left lookup('$input-' + size + '-prefix-padding-left')
+            &.k-with-suffix
+            &.k-clearable
+                .k-inner
+                    padding-right lookup('$input-' + size + '-suffix-padding-right') 
+            &.k-with-suffix.k-clearable
+                .k-inner
+                    padding-right lookup('$input-' + size + '-clearable-suffix-padding-right')
+    for size in large default small mini
+        if size != default
+            &.k-{size}
+                generate(size)
+        else
+            generate(size)
+            
+    // textarea
+    .k-textarea
+        padding $input-textarea-padding
+        height auto
+        line-height 1.5
 
     // fake dom for get value's width
     .k-fake
@@ -119,4 +143,5 @@
         .k-inner
             box-sizing content-box
 
-@import $theme-dir + '/input.styl' if exists($theme-dir + '/input.styl') 
+
+require($theme-dir + '/input.styl')

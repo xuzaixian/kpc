@@ -6,6 +6,7 @@ const {
     isShowInput, isShowEnd, unit,
     step, _isDragging, _isFirst, _inputValue,
     _isSecond, _sliderValue, style,
+    isShowStop, marks,
 } = self.get();
 
 const classNameObj = {
@@ -13,6 +14,8 @@ const classNameObj = {
     'k-disabled': disabled,
     [className]: className,
     'k-dragging': _isDragging,
+    'k-show-input': isShowInput && !isRange,
+    'k-show-end': isShowEnd,
 };
 
 const sliderWidth = max - min;
@@ -51,6 +54,13 @@ const sliderWidth = max - min;
                     self._onDrag.bind(self, undefined)
                 }}
                 ev-click={{ self._stopPropagation }}
+                tabindex={{ disabled ? "-1" : "0" }}
+                ev-keydown={{ isRange ? 
+                    self._onKeydown.bind(self, '_isFirst') :
+                    self._onKeydown.bind(self, undefined)
+                }}
+                ev-focusin={{ self._onFocusin.bind(self, '_isFirst') }}
+                ev-focusout={{ self._onFocusout.bind(self, '_isFirst') }}
             >
                 <div v-if={{ isInnerText }}>{{ isRange ? value : value[0]}}</div>
             </div>
@@ -66,14 +76,40 @@ const sliderWidth = max - min;
                 style={{ {
                     left: (_sliderValue[1] - min) / sliderWidth * 100 + '%'
                 } }}
+                tabindex={{ disabled ? "-1" : "0" }}
+                ev-keydown={{ self._onKeydown.bind(self, '_isSecond') }}
+                ev-focusin={{ self._onFocusin.bind(self, '_isSecond') }}
+                ev-focusout={{ self._onFocusout.bind(self, '_isSecond') }}
+                ev-click={{ self._stopPropagation }}
             >
                 <div v-if={{ isInnerText }}>{{ value[1] }}</div>
             </div>
+            {{ do {
+                if (isShowStop) {
+                    const counts = Math.floor((max - min) / step);
+                    const ret = [];
+                    for (let i = 1; i < counts; i++) {
+                        ret.push(<i class="k-point" 
+                            style={{ {left: (i / counts * 100) + '%'} }}
+                        ></i>)
+                    }
+                    ret;
+                }
+            } }} 
         </div>
-        <div class="k-box" v-if={{ isShowEnd }}>
+        <div class="k-box" v-if={{ isShowEnd && !marks }}>
             <span>{{ min + unit }} </span>
             <span>{{ max + unit }}</span>
         </div>
+        <div class="k-marks" v-if={{ marks }}>{{ do {
+            const counts = Math.floor((max - min) / step);
+            <span v-for={{ marks }}
+                style={{ {
+                    left: ((key - min) / counts * 100) + '%'
+                } }}
+                ev-click={{ self._setOneValue.bind(self, key) }}
+            >{{ value }}</span>
+        } }}</div>
     </div>
     <div class="k-spinner-wrapper"
         v-if={{ isShowInput && !isRange }}
@@ -84,6 +120,8 @@ const sliderWidth = max - min;
             min={{ min }}
             v-model="_inputValue"
             step={{ step }} 
+            ref="spinner"
+            vertical
         />
     </div>
 </div>

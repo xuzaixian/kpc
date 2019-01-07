@@ -2,27 +2,20 @@
 
 .k-slider
     position relative
-    // display flex
-    // align-items center
-    display table
+    outline none
+    display inline-block
     width 100%
     .k-slider-wrapper
-        // flex 1
-        display table-cell
-        vertical-align middle
+        margin $slider-margin
         .k-wrapper
             height $slider-height
             background-color $slider-bg-color
             border-radius $slider-border-radius
             cursor pointer
             position relative
-            // display inline-block
             user-select none
         .k-box
-            // position absolute
-            // top $slider-height
             padding $slider-box-padding
-            // width 100%
             :last-child
                 float right
         .k-bar
@@ -44,15 +37,22 @@
             border-radius $slider-handle-border-radius 
             background-color $slider-handle-bg-color 
             transition all $transition 
+            outline none
+            z-index 1
             &:hover
+            &:focus
                 transform $slider-handle-hover-transform 
                 cursor grab
                 background-color $slider-handle-hover-bg-color 
+
+    &.k-show-input
+        .k-slider-wrapper
+            margin-right $slider-spinner-width
+
     .k-spinner-wrapper
-        display table-cell
-        width $slider-spinner-width 
-    .k-spinner
-        float right
+        position absolute
+        top 0
+        right 0
 
     &.k-dragging
         .k-bar
@@ -72,8 +72,33 @@
         .k-handle
             border-color $slider-disabled-color
             &:hover
+            &:focus
                 background-color $slider-handle-disabled-bg-color
                 cursor not-allowed
                 transform none
+
+    // stop point
+    .k-point
+        position absolute
+        top 0
+        width $slider-stop-point-width
+        height $slider-stop-point-height
+        background $slider-stop-point-bg-color
+        margin-left -(@width / 2)
+
+    // marks
+    .k-marks
+        position relative
+        height $slider-marks-height
+        > span
+            position absolute
+            transform translateX(-50%) 
+            white-space nowrap
+            padding $slider-box-padding 
+            cursor pointer
+            &:first-child
+                transform none
+            &:last-child
+                transform translateX(-100%)
 
 require($theme-dir + '/slider.styl')

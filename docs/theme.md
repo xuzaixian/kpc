@@ -1,6 +1,7 @@
 ---
 title: 定制主题
 order: 1
+sidebar: doc
 ---
 
 在快速开始章节我们提到过“多文件半构建版”可以支持主题定制。因为这个版本样式文件使用了
@@ -19,15 +20,16 @@ const path = require('path');
 {
     loader: 'stylus-loader',
     options: {
-        'incluce css': true,
-        // 引入自定义主题文件mytheme.styl
+        'include css': true,
+        'resolve url': true,
+        // 引入自定义主题文件mytheme/index.styl
         import: path.resolve(__dirname, 'styles/mytheme/index.styl')
     }
 }
 ```
 
 > kpc内置了一个`ksyun`的主题，我们只需要将`import`指向它即可
-> `import: path.resolve(__dirname, 'node_modules/kpc/styles/themes/ksyun/index.styl')`
+> `import: '~kpc/styles/themes/ksyun/index.styl'`
 
 # 定义主题
 
@@ -102,6 +104,9 @@ $theme-dir := __dirname()
 ```
 
 此时`$theme-dir`指向`styles/mytheme`目录，kpc会在该目录下检测主题文件。
+
+> kpc已经定义好了stylus的`__dirname`方法，你也可以直接使用
+> `use('../../node_modules/kpc/styles/function.js')`。具体加载路径根据你的主题文件路径而定
 
 3. 在`styles/mytheme/`下新建`button.styl`文件（文件名必须与组件名对应），添加`k-dashed`
 样式定义

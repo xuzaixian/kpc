@@ -18,6 +18,7 @@ export default class ButtonGroup extends Intact {
     static propTypes = {
         vertical: Boolean,
         radio: Boolean,
+        checkType: ['radio', 'checkbox', 'none'],
     }
 
     _init() {

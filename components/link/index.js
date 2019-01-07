@@ -7,6 +7,12 @@ export default class Link extends Intact {
     @Intact.template()
     get template() { return template; }
 
+    static propTypes = {
+        href: String,
+        name: [String, Array],
+        isReplace: Boolean,
+    }
+
     defaults() {
         return {
             href: undefined,

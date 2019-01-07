@@ -25,6 +25,7 @@ export default class Editable extends Intact {
     static propTypes = {
         editing: Boolean,
         required: Boolean,
+        validate: [Function, String, RegExp],
         disabled: Boolean,
         tip: [String, Number],
         trim: Boolean,
@@ -57,7 +58,7 @@ export default class Editable extends Intact {
     }
 
     _setValue(value) {
-        const {validate, required, trim} = this.get();
+        const {validate, required, trim, value: oldValue} = this.get();
 
         if (trim) value = value.trim();
         
@@ -76,7 +77,8 @@ export default class Editable extends Intact {
         }
 
         if (!valid) {
-            this.set('value', value, {silent: true});
+            // do not change the value if invalid, #51
+            // this.set('value', value, {silent: true});
             this.set('invalid', true);
             return this.trigger('error', this, value);
         }
@@ -86,6 +88,10 @@ export default class Editable extends Intact {
             editing: false,
             value: value
         });
+
+        if (oldValue !== value) {
+            this.trigger('change', this, value, oldValue);
+        }
     }
 
     reset() {

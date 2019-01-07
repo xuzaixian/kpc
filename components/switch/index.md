@@ -2,11 +2,13 @@
 title: 开关
 category: 组件
 order: 16
+sidebar: doc
 ---
 
-# 属性
+> Vue不能使用`Switch`作为组件名，可以自定义为`KSwitch`: 
+> `import {Switch as KSwitch} from 'kpc/components/switch';`
 
-## Switch
+# 属性
 
 | 属性 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
@@ -17,14 +19,22 @@ order: 16
 | height | 开关的高度 | `Number` | `undefined` |
 | size | 开关的型号 | `String` | `"default"` |
 | disabled | 控制禁用 | `Boolean` | `false` |
-| value | 开关值 | `Any` | `false` |
-| trueValue | 开启时的值 | `Any` | `true` |
-| falseValue | 关闭时的值 | `Any` | `false` |
+| value | 开关当前值，可用`v-model`双向绑定 | `*` | `false` |
+| trueValue | 开启时的值 | `*` | `true` |
+| falseValue | 关闭时的值 | `*` | `false` |
+
+# 扩展点
+
+| 名称 | 说明 |
+| --- | --- |
+| on | 扩展开启时的文案 |
+| off | 扩展关闭时的文案 |
+
 
 # 方法
 
 | 方法名 | 说明 | 参数 | 返回值 |
 | --- | --- | --- | --- |
-| isChecked | 判断是否k开启 | `` | `{Boolean}` |
-| check | 开启按钮 | `` | `undefined` |
-| uncheck | 关闭按钮 | `` | `undefined` |
+| isChecked | 判断是否开启 | - | `Boolean` |
+| check | 开启按钮 | - | `undefined` |
+| uncheck | 关闭按钮 | - | `undefined` |

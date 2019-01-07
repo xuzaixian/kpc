@@ -1,0 +1,43 @@
+@require('./variables.styl')
+
+.k-tree
+    if $tree-font-size != inherit
+        font-size $tree-font-size
+    line-height $tree-line-height 
+    .k-label
+        > .k-text
+            vertical-align middle
+            &:hover
+                color $tree-hover-color 
+    .k-leaf
+        padding-left $tree-leaf-padding-left
+        .k-checkbox
+            margin-left $tree-leaf-checkbox-margin-left
+    .k-icon
+        display inline-block
+        width $tree-icon-width
+        text-align center
+        vertical-align middle
+        color $tree-icon-color 
+        transform rotate(-90deg)
+        transition transform $transition
+    .k-node
+        cursor pointer
+        .k-node
+            padding-left $tree-node-node-padding-left
+            overflow hidden
+        // expaned
+        &.k-expanded
+            > .k-label .k-icon
+                transform rotate(0)
+        // disabled
+        &.k-disabled
+            .k-label
+            .k-icon
+                color $tree-disabled-color 
+    // checkbox
+    .k-checkbox
+        margin-right $tree-checkbox-margin-right
+
+
+require($theme-dir + '/tree.styl')

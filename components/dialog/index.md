@@ -2,6 +2,7 @@
 title: 弹窗
 category: 组件
 order: 10
+sidebar: doc
 ---
 
 # 属性
@@ -10,7 +11,7 @@ order: 10
 | --- | --- | --- | --- |
 | title | 弹窗标题 | `String` | `"提示"` |
 | value | 弹窗是否展示出来 | `Boolean` | `false` |
-| size | 弹窗尺寸 | `"default"` &#124; `"small"` | `"default"` |
+| size | 弹窗尺寸 | `"large"` &#124; `"default"` &#124; `"small"` &#124; `"mini"` | `"default"` |
 | loading | “确认”按钮是否为加载状态 | `Boolean` | `false` |
 | okText | “确认”按钮文案 | `String` | `"确认"` |
 | cancelText | “取消”按钮文案 | `String` | `"取消"` |
@@ -23,7 +24,9 @@ order: 10
 | 名称 | 说明 |
 | --- | --- |
 | header | 扩展弹窗头部 |
+| body | 扩展弹窗主体部分 |
 | footer | 扩展弹窗底部 |
+| footer-wrapper | 扩展弹窗整个底部，上述`footer`是它下面一个子扩展点 |
 
 # 方法
 

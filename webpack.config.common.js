@@ -14,8 +14,8 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.m?js$/,
-                exclude: [/node_modules(?!([\/\\]universal\-router))/],
+                test: /\.m?jsx?$/,
+                exclude: [/node_modules(?!([\/\\]universal\-router)|([\/\\]graphlibrary))/],
                 use: [
                     {
                         loader: 'babel-loader',
@@ -38,7 +38,7 @@ module.exports = {
                         loader: 'vdt-loader',
                         options: {
                             delimiters: ['{{', '}}'],
-                            skipWhitespace: true
+                            skipWhitespace: true,
                         }
                     }
                 ]
@@ -51,6 +51,7 @@ module.exports = {
                         loader: 'css-loader', 
                         options: {
                             url: true,
+                            minimize: isProduction,
                             // sourceMap: !isProduction,
                         }
                     },
@@ -64,6 +65,7 @@ module.exports = {
                         loader: 'stylus-loader', 
                         options: {
                             'include css': true,
+                            'resolve url': true,
                             sourceMap: false,
                             // 'import': path.resolve(__dirname, 'styles/themes/ksyun/index.styl'),
                         }
@@ -71,12 +73,12 @@ module.exports = {
                 ]
             },
             {
-                test: /\.(woff2?|eot|ttf|otf|svg)(\?.*)?$/,
+                test: /\.(woff2?|eot|ttf|otf|svg|jpg|png)(\?.*)?$/,
                 use: [
                     {
                         loader: 'file-loader',
                         options: {
-                            outputPath: './fonts/',
+                            outputPath: 'fonts/',
                             name: '[name].[ext]',
                         }
                     }
@@ -101,10 +103,12 @@ module.exports = {
             // 'vue$': 'vue/dist/vue.esm.js',
             'vue$': 'vue/dist/vue.js',
             // for running in vue
-            'intact$': 'intact-vue/dist/intact.vue.js',
+            'intact$': 'intact-vue',
+            'kpc$': path.resolve(__dirname, 'index.js'),
             'kpc': path.resolve(__dirname),
+            '@babel/runtime-corejs2/helpers/inheritsLoose': path.resolve(__dirname, 'inheritsLoose.js'),
         },
-        extensions: ['.mjs', '.js', '.vdt'],
+        extensions: ['.mjs', '.js', '.vdt', '.json'],
     },
     plugins: [
         new webpack.ProvidePlugin({

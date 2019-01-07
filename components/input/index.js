@@ -2,6 +2,7 @@ import Intact from 'intact';
 import template from './index.vdt';
 import '../../styles/kpc.styl';
 import './index.styl';
+import {selectInput} from '../utils';
 
 export default class Input extends Intact {
     @Intact.template
@@ -9,10 +10,21 @@ export default class Input extends Intact {
 
     static propTypes = {
         type: String,
+        name: String,
+        value: [String, Number],
+        defaultValue: [String, Number],
+        placeholder: String,
         readonly: Boolean,
         clearable: Boolean,
         disabled: Boolean,
+        size: ['large', 'default', 'small', 'mini'],
+        rows: [Number, String],
+        spellcheck: Boolean,
+        autoWidth: Boolean,
         fluid: Boolean,
+        width: [Number, String],
+        tabindex: [Number, String],
+        autocomplete: String,
     };
 
     defaults() {
@@ -31,6 +43,8 @@ export default class Input extends Intact {
             autoWidth: false,
             fluid: false,
             width: undefined,
+            tabindex: undefined,
+            autocomplete: undefined,
         }
     }
 
@@ -40,6 +54,7 @@ export default class Input extends Intact {
     }
 
     _mount() {
+        this.input = this.refs.input;
         this._adjustWidth();
     }
 
@@ -57,11 +72,15 @@ export default class Input extends Intact {
     }
 
     select() {
-        this.refs.input.select();
+        selectInput(this.refs.input);
     }
 
     focus() {
         this.refs.input.focus();
+    }
+    
+    blur() {
+        this.refs.input.blur();
     }
 
     _onInput(e) {
@@ -71,6 +90,12 @@ export default class Input extends Intact {
 
     _proxyEvent(name, e) {
         this.trigger(name, e);
+    }
+
+    _destroy() {
+        if (this.get('autoWidth')) {
+            this.input.style.width = '';
+        }
     }
 }
 

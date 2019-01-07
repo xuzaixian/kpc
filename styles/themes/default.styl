@@ -3,7 +3,8 @@
 *******************************/
 use('../functions.js')
 $theme-dir := __dirname()
-$fonts-dir := './fonts';
+// $fonts-dir := './fonts';
+$fonts-dir := '.';
 
 /******************************
              Colors
@@ -21,8 +22,8 @@ $light-black := #595959
             Page
 *******************************/
 
-$font-family := 'Microsoft YaHei'
-$font-size := unit(14 / 16, em)
+$font-family := 'Helvetica Neue,Helvetica,PingFang SC,Hiragino Sans GB,Microsoft YaHei,微软雅黑,Arial,sans-serif'
+$font-size := 14px 
 $text-color := $light-black 
 $primary-color := $blue
 $warning-color := $yellow
@@ -35,17 +36,33 @@ $disabled-color := #999
 $disabled-bg-color := #f7f7f7
 $disabled-border-color := #d9d9d9
 $bg-color := #eee
+$dark-bg-color := #ccc
+$placeholder-color := $disabled-color
 
-// height size
+// size
+$large-height := 40
+$large-font-size := unit(16 / 14, rem)
+$large-padding := 25
 $default-height := 36
+$default-font-size := 1rem
+$default-padding := 20
 $small-height := 30
+$small-font-size := unit(12 / 14, rem)
+$small-padding := 15
 $mini-height := 26
+$mini-font-size := unit(12 / 14, rem)
+$mini-padding := 10
+
+// the gutter between icon and text
+$icon-text-gutter := 6
 
 // box-shadow
 $box-shadow := 0 2px 8px 0 rgba(191, 191, 191, .5)
 $border-radius := unit(2 / 14, rem) 
 
 $max-z-index := 9999
+
+$line-height := 1.5
 
 /******************************
             Headers 
@@ -67,7 +84,7 @@ $h5 := unit(14 / 14, rem)
 
 $link-color := #4183c4
 $link-underline := none
-$link-hover-color := darken(saturate($link-color, 20), 15)
+$link-hover-color := palette($link-color, 1)
 $link-hover-underline := $link-underline
 
 

@@ -1,49 +1,93 @@
 import Button from 'components/button';
 import Link from 'components/link';
+import Badge from 'components/badge';
 
 const Article = self.get('Article');
 
 let currentNav = {};
+let demos = self.get('demos') || [];
 
 function Catalog(props) {
-    return <div class="catalog-section">
-        <h5 v-if={{ props.key !== 'undefined' }}>{{ props.key }}</h5>
-        <ul>
-            <li v-for={{ self.get(`sideBars.${props.key}`)}} class={{ {
-                active: value.path.includes(self.path.slice(1)) 
-            } }}>
-                {{ (() => {
-                    if (value.path.includes(self.path.slice(1))) {
+    let isEmpty = true;
+
+    const lis = __u.map(props.value, (value) => {
+        if (!value.disabled) isEmpty = false;
+        return <li
+            class={{ {
+                active: (() => {
+                    const path = self.path.slice(1);
+                    if (value.path.indexOf(path + '/') > -1 ||
+                        value.path.indexOf(path + '.md') > -1
+                    ) {
                         currentNav = value;
+                        return true;
                     }
-                })() }}
-                <Link href={{ `${process.URL_PREFIX}/${value.path.replace('.md', '/').replace('index/', '')}` }}>
-                    {{ do {
-                        const matches = value.path.match(/components\/([^\/]+)/);
-                        if (matches) {
-                            const name = matches[1];
-                            [
-                                name[0].toUpperCase() + name.substring(1),
-                                <span>{{ value.title }}</span>
-                            ];
+                })()
+            } }}
+            v-if={{ !value.disabled }}
+        >
+            <Link href={{ `${process.URL_PREFIX}/${value.path.replace('.md', '/').replace('index/', '')}` }}>
+                {{ do {
+                    const matches = value.path.match(/components\/([^\/]+)/);
+                    if (matches) {
+                        const name = matches[1];
+                        [
+                            name[0].toUpperCase() + name.substring(1),
+                            <span>{{ value.title }}</span>
+                        ];
+                    } else {
+                        if (value.title === '更新日志') {
+                            <Badge disabled={{ !!self.get('hasRead') }}>{{ value.title }}</Badge>
                         } else {
                             value.title;
                         }
-                    } }}
-                </Link>
-            </li>
-        </ul>
+                    }
+                } }}
+            </Link>
+        </li>
+    });
+    if (isEmpty) return;
+    return <div class="catalog-section">
+        <h5 v-if={{ props.key !== undefined }}>{{ props.key }}</h5>
+        <ul>{{ lis }}</ul>
     </div>
 }
 
-<t:parent navIndex="document" class="document-page">
+const sidebar = Article.sidebar;
+const _sidebar = [];
+if (sidebar) {
+    if (sidebar.undefined) {
+        _sidebar.push({
+            key: undefined,
+            value: sidebar.undefined
+        });
+    }
+    for (let key in sidebar) {
+        if (key !== 'undefined') {
+            _sidebar.push({
+                key,
+                value: key !== '组件' ? 
+                    sidebar[key] :
+                    sidebar[key].sort((a, b) => {
+                        return a.path > b.path ? 1 : -1;
+                    })
+            });
+        }
+    }
+}
+
+<t:parent navIndex="document" class="document-page fixed-aside" {{ ...scope }}>
     <b:content>
-        <aside>
+        <aside class={{ {expanded: self.get('expanded')} }}>
             <div class="aside-wrapper">
-                <Catalog key="undefined" />
-                <Catalog key="组件" />
+                <Catalog key={{ value.key }} value={{ value.value }} v-for={{ _sidebar }} />
                 <div class="aside-border transition"></div>
             </div>
+            <Button icon
+                ev-click={{ self.set.bind(self, 'expanded', !self.get('expanded')) }}
+            >
+                <i class="k-icon ion-android-menu"></i>
+            </Button>
         </aside>
         <article>
             <div class="article-head">
@@ -56,7 +100,25 @@ function Catalog(props) {
                     上修正该文档
                 </div>
             </div>
-            <Article />
+            <Article ref="article" />
         </article>
+        <div class="table-of-contents" v-if={{ demos }}
+            ref="tableContents"
+        >
+            <div v-if={{ demos.length > 0 }} class="aside-border-nav"></div>
+            <ul>
+                <li v-for={{ demos }}
+                    class={{ {
+                        "c-ellipsis-dot": true,
+                        'active': self.get('activeExample') == value.data.index
+                    } }}
+                    ev-click={{ self._scrollToView.bind(self, value) }}
+                >
+                    {{ value.data.setting.title }}
+                </li>
+            </ul>
+            <div v-if={{ false }} class="aside-border transition" style={{ self.get('borderStyle') }}></div>
+            <div class="aside-dot transition" style={{ self.get('borderStyle') || 'display:none' }}></div>
+        </div>
     </b:content>
 </t:parent>

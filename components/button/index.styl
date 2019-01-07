@@ -1,37 +1,47 @@
 @require('./variables.styl')
 @require('../../styles/mixin.styl')
 
-types = primary warning danger active
-sizes = small mini
+types = primary warning danger active success
+sizes = large small mini
 
 .k-btn
     cursor pointer
     display inline-block
     height $btn-height
-    line-height s('calc(%s - 2px)', $btn-height)
+    // line-height s('calc(%s - 2px)', $btn-height)
     padding $btn-padding
     outline none
     border none
-    // vertical-align middle
+    vertical-align middle
     color $btn-color
     background-color $btn-bg-color
     text-align center
     border-radius $btn-border-radius
     transition all $transition 
-    // transition-delay 50000s
     border 1px solid $btn-border-color
     font-size $btn-font-size
+    white-space nowrap
+    button& > span
+        vertical-align middle
+        line-height s('calc(%s - 2px)', $btn-height)
     &:hover
+    &:focus
         border-color $btn-hover-border-color
         color $btn-hover-color
+    &:active
+        background-color palette($primary-color, -4)
     for type in types 
         &.k-{type}
             background-color lookup('$btn-' + type + '-bg-color')
             color lookup('$btn-' + type + '-color')
             border-color lookup('$btn-' + type + '-border-color')
             &:hover
-                background-color lighten(@background-color, 20%)
-                border-color lighten(@border-color, 20%)
+            &:focus
+                background-color palette(@background-color, -1)
+                border-color palette(@border-color, 1)
+            &:active
+                background-color palette(@background-color, 1)
+                border-color palette(@border-color, 1)
     // disabled
     &.k-disabled
         &, &:hover
@@ -52,14 +62,23 @@ sizes = small mini
             font-size lookup('$btn-' + size + '-font-size')
             height lookup('$btn-' + size + '-height')
             padding lookup('$btn-' + size + '-padding')
-            line-height s('calc(%s - 2px)', lookup('$btn-' + size + '-height'))
+            .k-icon
+                line-height s('calc(%s - 2px)', lookup('$btn-' + size + '-height'))
+                // line-height lookup('$btn-' + size + '-height')
             &.k-btn-icon
                 width @height
+            button& > span
+                line-height s('calc(%s - 2px)', lookup('$btn-' + size + '-height'))
 
     // icon
     .k-icon
         font-size inherit
-        // vertical-align middle
+        vertical-align middle
+        line-height s('calc(%s - 2px)', $btn-height)
+        // for IE10 and above
+        /_:-ms-lang(x), &
+            line-height $btn-height
+        // line-height $btn-height
         &:before
             font-size inherit
         + span
@@ -73,7 +92,7 @@ sizes = small mini
         padding 0
         .k-icon
             margin 0
-            font-size $btn-btn-icon-font-size
+            // font-size $btn-btn-icon-font-size
 
     // fluid
     &.k-fluid
@@ -82,33 +101,44 @@ sizes = small mini
 
     // shape
     &.k-circle
-        border-radius unit($btn-height / 2, rem)
+        border-radius unit($btn-large-height / 2, rem)
 
     // loading
     &.k-loading
         &, &:hover
-            background-color lighten($btn-bg-color, 50%)
-            color lighten($btn-color, 50%)
-            border-color lighten($btn-border-color, 50%)
+            background-color palette($btn-bg-color, -2)
+            color palette($btn-color, -2)
+            border-color palette($btn-border-color, -2)
         .k-icon:not(.icon-loading)
             display none
         for type in types 
             &.k-{type}
                 &, &:hover
-                    background-color lighten(lookup('$btn-' + type + '-bg-color'), 50%)
-                    color lighten(lookup('$btn-' + type + '-color'), 50%)
-                    border-color lighten(lookup('$btn-' + type + '-border-color'), 50%)
+                    background-color palette(lookup('$btn-' + type + '-bg-color'), -2)
+                    color palette(lookup('$btn-' + type + '-color'), -2)
+                    border-color palette(lookup('$btn-' + type + '-border-color'), -2)
         &:not(.k-btn-icon):not(.k-icon-left):not(.k-icon-right)
-            padding-left unit(getLeft($btn-padding) + 1, em)
+            padding-left s("calc(%s + 1em)", getLeft($btn-padding))
             .icon-loading
                 margin-left -1em
             for size in sizes 
                 &.k-{size}
-                    padding-left unit(getLeft(lookup('$btn-' + size + '-padding')) + 1, em)
+                    padding-left s("calc(%s + 1em)", getLeft(lookup('$btn-' + size + '-padding')))
 
     // radio
     input
         position absolute
+        opacity 0
+        width 0
+        height 0
+
+    // let non-button element vertical align middle
+    &:not(button)
+        display inline-flex
+        align-items center
+        justify-content center
+        .k-icon
+            line-height inherit
 
 // buttons
 .k-btns
@@ -118,6 +148,8 @@ sizes = small mini
         margin 0
         vertical-align middle
         &:hover
+        &:focus
+        &.k-active
             z-index 1
             position relative
     // fluid
@@ -127,45 +159,45 @@ sizes = small mini
     // horizontal
     &:not(.k-vertical)
         > .k-btn
-            &:not(:first-of-type)
+            &:not(:first-child)
                 margin-left -1px // !important
-                &:not(:last-of-type)
+                &:not(:last-child)
                     border-radius 0
-            &:not(:only-of-type):first-of-type
+            &:not(:only-child):first-child
                 border-top-right-radius 0
                 border-bottom-right-radius 0
-            &:not(:only-of-type):last-of-type
+            &:not(:only-child):last-child
                 border-top-left-radius 0
                 border-bottom-left-radius 0
             for type in types
                 if type != 'active'
-                    &.k-{type}:not(:first-of-type)
+                    &.k-{type}:not(:first-child)
                         border-left-color lookup('$btns-' + type + '-border-color')
-                    &.k-{type}:not(:last-of-type)
+                    &.k-{type}:not(:last-child)
                         border-right-color lookup('$btns-' + type + '-border-color')
 
         // for tooltip wrap it in vue
         > .k-tooltip
-            &:not(:first-of-type)
+            &:not(:first-child)
                 .k-btn
                     margin-left -1px
-                &:not(last-of-type)
+                &:not(last-child)
                     .k-btn
                         border-radius 0
-            &:not(:only-of-type):first-of-type
+            &:not(:only-child):first-child
                 .k-btn
                     border-top-right-radius 0
                     border-bottom-right-radius 0
-            &:not(:only-of-type):last-of-type
+            &:not(:only-child):last-child
                 .k-btn
                     border-top-left-radius 0
                     border-bottom-left-radius 0
             for type in types
                 if type != 'active'
-                    &:not(:first-of-type)
+                    &:not(:first-child)
                         .k-btn.k-{type}
                             border-left-color lookup('$btns-' + type + '-border-color')
-                    &:not(:last-of-type)
+                    &:not(:last-child)
                         .k-btn.k-{type}
                             border-right-color lookup('$btns-' + type + '-border-color')
 
@@ -183,45 +215,45 @@ sizes = small mini
             display block
             &:not(.k-btn-icon)
                 width 100%
-            &:not(:first-of-type)
+            &:not(:first-child)
                 margin-top -1px
-                &:not(:last-of-type)
+                &:not(:last-child)
                     border-radius 0
-            &:not(:only-of-type):first-of-type
+            &:not(:only-child):first-child
                 border-bottom-left-radius 0
                 border-bottom-right-radius 0
-            &:not(:only-of-type):last-of-type
+            &:not(:only-child):last-child
                 border-top-left-radius 0
                 border-top-right-radius 0
             for type in types
                 if type != 'active'
-                    &.k-{type}:not(:first-of-type)
+                    &.k-{type}:not(:first-child)
                         border-top-color lookup('$btns-' + type + '-border-color')
-                    &.k-{type}:not(:last-of-type)
+                    &.k-{type}:not(:last-child)
                         border-bottom-color lookup('$btns-' + type + '-border-color')
         > .k-tooltip
             display block
             .k-btn:not(.k-btn-icon)
                 width 100%
-            &:not(:first-of-type)
+            &:not(:first-child)
                 margin-top -1px
-                &:not(:last-of-type)
+                &:not(:last-child)
                     .k-btn
                         border-radius 0
-            &:not(:only-of-type):first-of-type
+            &:not(:only-child):first-child
                 .k-btn
                     border-bottom-left-radius 0
                     border-bottom-right-radius 0
-            &:not(:only-of-type):last-of-type
+            &:not(:only-child):last-child
                 .k-btn
                     border-top-left-radius 0
                     border-top-right-radius 0
             for type in types
                 if type != 'active'
-                    &:not(:first-of-type)
+                    &:not(:first-child)
                         .k-btn.k-{type}
                             border-top-color lookup('$btns-' + type + '-border-color')
-                    &:not(:last-of-type)
+                    &:not(:last-child)
                         .k-btn.k-{type}
                             border-bottom-color lookup('$btns-' + type + '-border-color')
             

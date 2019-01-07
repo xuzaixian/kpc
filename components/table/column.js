@@ -5,20 +5,32 @@ export default class TableColumn extends Intact {
     get template() { return template; }
 
     static propTypes = {
+        title: [String, Intact.VNode, Object /* for vue vnode*/],
+        template: Function,
+        key: {
+            type: String,
+            required: true,
+        },
         sortable: Boolean,
+        width: [Number, String],
+        group: Array,
         multiple: Boolean,
+        minWidth: [Number, String],
+        ignore: Boolean,
     };
 
     defaults() {
         return {
-            title: '',
+            title: undefined,
             template(data, index) { },
             key: '',
             sortable: false,
             width: undefined,
-            groups: undefined,
+            group: undefined,
             multiple: false,
             value: [],
+            minWidth: undefined,
+            ignore: false,
 
             // passed by parent
             $parent: undefined,
@@ -26,12 +38,18 @@ export default class TableColumn extends Intact {
         }
     }
 
+    _init() {
+        this.on('$receive:width', (c, v) => {
+            this.width = v;
+        });
+    }
+
     onClick(e) {
         this.trigger('click', e);
     }
 
     onDragStart(e) {
-        this.trigger('dragStart', e);
+        this.trigger('dragStart', this.vNode, e);
     }
 
     _isChecked(v) {
@@ -82,5 +100,9 @@ export default class TableColumn extends Intact {
                 return `(${ret})`;
             }
         }
+    }
+
+    _stopPropagation(e) {
+        e.stopPropagation();
     }
 }

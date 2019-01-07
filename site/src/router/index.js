@@ -8,16 +8,38 @@ import Router from 'universal-router';
 
 export default new Router([
     {
-        path: '/',
+        path: /^\/(kpc\/)?$/,
         action: async () => {
-            return {Page: await import('../pages/index')}
+            return {Page: (await import('../pages/index')).default}
+        }
+    },
+    {
+        path: /^(?:\/kpc)?(\/docs\/design\/.*)$/,
+        action: async (context) => {
+            return {
+                Page: (await import('../pages/design')).default,
+                data: {
+                    path: context.params[0]
+                }
+            };
+        }
+    },
+    {
+        path: /^(?:\/kpc)?(\/docs\/blogs\/.*)$/,
+        action: async (context) => {
+            return {
+                Page: (await import('../pages/blog')).default,
+                data: {
+                    path: context.params[0]
+                }
+            };
         }
     },
     {
         path: /(.*)/,
         action: async (context) => {
             return {
-                Page: await import('../pages/document'),
+                Page: (await import('../pages/document')).default,
                 data: {
                     path: context.params[0]
                 }

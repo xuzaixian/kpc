@@ -1,7 +1,7 @@
 import {isStringOrNumberNotEmpty} from '../utils';
 
 let {
-    type, className, size, icon, circle, ref, key,
+    type, className, size, icon, circle, ref, key, tabindex,
     tagName, htmlType, fluid, children, loading, disabled,
     value, _value, name, tagProps, _checkType, ...rest
 } = self.get();
@@ -70,15 +70,18 @@ if (!icon && Array.isArray(children)) {
 
 <Button class={{ classNameObj }} {{ ...rest }} {{ ...tagProps }}
     ev-click={{ self._onClick }}
+    tabindex={{ disabled || loading ? "-1" : tabindex }}
+    ev-mouseup={{ self._blur }}
 >
     {{ loading ? 
         classNameObj['k-icon-right'] ?
-            [children, <i class="k-icon ion-load-c icon-loading"></i>] :
-            [<i class="k-icon ion-load-c icon-loading"></i>, children] :
+            [children, <i class="k-icon ion-load-c icon-loading" key="k-loading"></i>] :
+            [<i class="k-icon ion-load-c icon-loading" key="k-loading"></i>, children] :
         children 
     }}
     <input type={{ _checkType }} v-if={{ _checkType !== 'none' }}
         name={{ name }} 
         checked={{ checked }}
+        tabindex="-1"
     />
 </Button>

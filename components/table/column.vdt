@@ -1,27 +1,43 @@
 import {Dropdown, DropdownMenu, DropdownItem} from '../dropdown';
 import {Checkbox} from '../checkbox';
 import {Radio} from '../radio';
+import {isStringOrNumber} from '../utils';
+import {normalize} from 'intact';
 
-const {
-    width, title, key, group, multiple,
-    sortable, $parent, _show,
+let {
+    title, key, group, multiple, ignore,
+    sortable, $parent, _show, className,
 } = self.get();
 
-const {sort, resizable} = $parent.get();
+const width = self.width;
 
-<th width={{ width }} 
-    title={{ title }}
-    class={{ {'k-sortable': sortable} }}
+const {sort, resizable, container} = $parent.get();
+const groupText = group && self._getGroupText() || '';
+
+const thTitle = isStringOrNumber(title) ? title + groupText : undefined;
+title = normalize ? normalize(title) : title;
+
+<th title={{ thTitle }}
+    class={{ {
+        'k-sortable': sortable,
+        [className]: className,
+    } }}
     ev-click={{ self.onClick }}
+    data-ignore={{ ignore ? '' : undefined }}
 >
-    <div v-if={{ resizable }} class="k-resize" ev-mousedown={{ self.onDragStart }}></div>
+    <div v-if={{ resizable }} class="k-resize" 
+        ev-mousedown={{ self.onDragStart }}
+        ev-click={{ self._stopPropagation }} 
+    ></div>
     <div class={{ {"k-th": true, "k-group-show": _show} }}>
-        <div v-if={{ !group }} class="c-ellipsis">{{ title }}</div>
+        <div v-if={{ !group }} class="c-ellipsis">
+            <b:title>{{ title }}</b:title>
+        </div>
         <div class="k-group" v-if={{ group }}>
-            <Dropdown>
+            <Dropdown container={{ container }}>
                 <i class="k-arrow ion-ios-arrow-down"></i>
                 <DropdownMenu class={{ {'k-table-dropdown': true, 'k-multiple': multiple} }}
-                    ev-$change:show={{ self._onChangeShow }}
+                    ev-$change:value={{ self._onChangeShow }}
                 >
                     <DropdownItem v-for={{ group }} 
                         class={{ {'k-active': self._isChecked(value.value)} }}
@@ -36,8 +52,8 @@ const {sort, resizable} = $parent.get();
                 </DropdownMenu>
             </Dropdown>
             <div class="c-ellipsis">
-                {{ title }}
-                {{ self._getGroupText() }}
+                <b:title>{{ title }}</b:title>
+                {{ groupText }}
             </div>
         </div>
         {{ do {

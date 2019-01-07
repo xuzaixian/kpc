@@ -3,59 +3,165 @@ title: 分组
 order: 11
 ---
 
-`group`：分组，类型`Array`，`{}`(默认)
-* `group`接收一个数组，数组每一项接收一个`{label: '展示内容', value: '值'}`的对象来定义分组信息。
+分组需要两个`group`来指定：
 
+1. 第一个是`Table`上的`group`属性，该属性指定当前分组的方式，形式为：`{["分组的列的key"]: ["当前列选择的分组的值"]}`
+2. 第二个是`TableColumn`或者`scheme`上的`group`属性，该属性指定当前列有哪些可选的分组方式，
+如果该列支持多选，还可以添加`multiple`属性，默认为单选。形式为：`[{label: "分组展示文案", value: "选择后的值"}]`
 
-另一种定义表头信息方式`<TableColumn group={{[]}}></TableColumn>`
+当分组方式改变时，可以监听默认事件`$change:group`来执行自定义分组逻辑
+
+> `group`属性不会双向绑定，所以在改变时，你应该同步更新当前属性值(`sort`也一样)
 
 ```vdt
-import Table, {TableColumn} from 'kpc/components/table';
+import {Table, TableColumn} from 'kpc/components/table';
 
-var defaultGroup = [
-    {label: 'Monday', value: 1},
-    {label: 'Tuesday', value: 2},
-    {label: 'Wednesday', value: 3}
-];
-var scheme = {
-	name: {
-		title: '姓名',
-		template: function(data) {
-			return data.name;
-		}
-	},
-	time: {
-		title: '时间',
-		template: function(data) {
-			return data.time;
-		},
-		group: defaultGroup
-	}
+const scheme = {
+    name: '名称',
+    status: {
+        title: '状态',
+        template(data) {
+            return <span>{{ data.status === 'active' ? '运行中' : '已关闭' }}</span>
+        },
+        group: [
+            {label: '全部', value: ''},
+            {label: '运行中', value: 'active'},
+            {label: '已关闭', value: 'stopped'},
+        ]
+    }
 };
 
-
-var data = [{name: 'lihua', time: '10-12-12'}];
-var data1 = [{name: 'lihua(标签形式定义表头信息)', time: '10-12-12'}];
-
 <div class='no-data-template'>
-    <Table scheme={{ scheme }} data={{ data }}/>
-    <Table data={{ data1 }}>
-      <TableColumn title='姓名' key='name'></TableColumn>
-      <TableColumn title='时间' key='time' group={{defaultGroup}}></TableColumn>
+    <Table scheme={{ scheme }} 
+        data={{ self.get('data') }} 
+        v-model:group="group"
+        ev-$change:group={{ self._onChangeGroup }}
+        ref="__test1"
+    />
+    <Table data={{ self.get('multipleData') }} 
+        v-model:group="multipleGroup"
+        ev-$change:group={{ self._onChangeMultipleGroup }}
+        ref="__test2"
+    >
+        <TableColumn title='名称' key='name' />
+        <TableColumn title='状态' key='status' 
+            group={{ [ 
+                {label: '运行中', value: 'active'},
+                {label: '已关闭', value: 'stopped'},
+            ] }}
+            multiple
+        >
+            <b:template params="data">
+                <span>{{ data.status === 'active' ? '运行中' : '已关闭' }}</span>
+            </b:template>
+        </TableColumn>
     </Table>
 </div>
 ```
 
 ```styl
 .no-data-template
-   display: flex
-   .k-table-wrapper
-       margin-left: 10px
-
+    display: flex
+    .k-table
+        flex 1
+    .k-table-wrapper
+        margin-left: 10px
 ```
 
+```js
+export default class extends Intact {
+    @Intact.template()
+    static template = template;
 
+    defaults() {
+        return {
+            data: [], 
+            group: {status: ''},
+            multipleData: [],
+            multipleGroup: {status: []},
+        }
+    }
 
+    _init() {
+        this.oData = [
+            {name: '主机1', status: 'active'},
+            {name: '主机2', status: 'stopped'},
+            {name: '主机3', status: 'active'},
+        ];
+        this.set({
+            data: this.oData,
+            multipleData: this.oData,
+        });
+    }
 
+    _onChangeGroup(c, group) {
+        console.log(group);
+        const data = this.oData.filter(item => {
+            let matched = true;
+            for (let key in group) {
+                const value = group[key];
+                if (value && item[key] !== value) {
+                    matched = false;
+                    break;
+                }
+            }
+            return matched;
+        });
 
+        this.set('data', data);
+    }
 
+    _onChangeMultipleGroup(c, group) {
+        console.log(group);
+        const data = this.oData.filter(item => {
+            let matched = true;
+            for (let key in group) {
+                const value = group[key];
+                if (value.length && value.indexOf(item[key]) === -1) {
+                    matched = false;
+                    break;
+                }
+            }
+            return matched;
+        });
+
+        this.set('multipleData', data);
+    }
+}
+```
+
+```vue-data
+data() {
+    return {
+        data: [], 
+        group: {status: ''},
+        multipleData: [],
+        multipleGroup: {status: []},
+        scheme: {
+            name: '名称',
+            status: {
+                title: '状态',
+                template: function(data) {
+                    return <span>{data.status === 'active' ? '运行中' : '已关闭'}</span>
+                },
+                group: [
+                    {label: '全部', value: ''},
+                    {label: '运行中', value: 'active'},
+                    {label: '已关闭', value: 'stopped'},
+                ]
+            }
+        },
+    }
+},
+```
+```vue-script
+created() {
+    this.oData = [
+        {name: '主机1', status: 'active'},
+        {name: '主机2', status: 'stopped'},
+        {name: '主机3', status: 'active'},
+    ];
+    this.data = this.oData;
+    this.multipleData = this.oData;
+},
+```

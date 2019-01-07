@@ -4,18 +4,18 @@ import path from 'path';
 import router from './router';
 import App from 'components/app';
 import {collectInitial} from 'node-style-loader/collect';
-import DynamicMiddleware from 'dynamic-middleware';
 
 function createRouterMiddleware(router, App) {
     return function(req, res, next) {
         router.resolve({pathname: req.path}).then(({Page, data}) => {
             const $app = new App();
-            return $app.render(Page, data).then(() => {
+            return $app.render(Page.default, data).then((content) => {
                 res.render('index', {
-                    content: $app.toString(),
+                    content,
                     style: collectInitial()
                 });
             }).catch(e => {
+                console.log(e.stack);
                 res.render('index');
             });
         }).catch(e => {
@@ -28,7 +28,7 @@ function createRouterMiddleware(router, App) {
     }
 }
 
-let routerMiddleware = DynamicMiddleware.create(createRouterMiddleware(router, App));
+let routerMiddleware = createRouterMiddleware(router, App);
 
 const app = Advanced((app) => {
     app.engine('vdt', Vdt.__express);
@@ -36,7 +36,9 @@ const app = Advanced((app) => {
     app.set('view engine', 'vdt');
     Vdt.configure('delimiters', ['{{', '}}']);
 
-    app.use(routerMiddleware.handler());
+    app.use(function(req, res, next) {
+        routerMiddleware(req, res, next);
+    });
 
     const webpack = require('webpack');
     const webpackConfig = require('../webpack.config.client');
@@ -52,7 +54,7 @@ const app = Advanced((app) => {
     }));
     app.use(webpackHotMiddleware(compiler));
 
-    // app.use('/static', Advanced.Express.static(path.resolve(__dirname, 'static')));
+    app.use(Advanced.Express.static(path.resolve(__dirname, '../')));
 });
 
 const port = 3000;
@@ -62,9 +64,9 @@ app.listen(port, () => {
 
 if (module.hot) {
     module.hot.accept(['./router'], () => {
-        const router = require('./router');
+        const router = require('./router').default;
         // const App = require('components/app').default;
-        routerMiddleware.replace(createRouterMiddleware(router, App));
+        routerMiddleware = createRouterMiddleware(router, App);
     });
 }
 

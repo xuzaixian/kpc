@@ -251,7 +251,8 @@ export default function position(elem, options) {
     position.left += myOffset[0];
     position.top += myOffset[1];
 
-    ['left', 'top'].forEach((dir, i) => {
+    const collisionDirection = options.collisionDirection || ['left', 'top'];
+    collisionDirection.forEach((dir, i) => {
         const coll = collision[i];
         if (rules[coll]) {
             rules[coll][dir](position, {
@@ -300,11 +301,23 @@ export default function position(elem, options) {
         if (targetHeight < elemHeight && abs(top + bottom) < targetHeight) {
             feedback.vertical = 'middle';
         }
-        if (max(abs(left), abs(right)) > max(abs(top), abs(bottom))) {
+
+        if (
+            position.top + elemHeight <= targetOffset.top || 
+            position.top >= targetOffset.top + targetHeight
+        ) {
+            feedback.important = 'vertical';
+        } else if (
+            position.left + elemWidth <= targetOffset.left ||
+            position.left >= targetOffset.left + targetWidth
+        ) {
+            feedback.important = 'horizontal';
+        } else if (max(abs(left), abs(right)) > max(abs(top), abs(bottom))) {
             feedback.important = 'horizontal';
         } else {
             feedback.important = 'vertical';
         }
+
         options.using(feedback, position);
     }
 
@@ -312,8 +325,11 @@ export default function position(elem, options) {
     if (computedStyle.position === 'static') {
         style.position = 'relative';
     }
-    style.left = position.left + 'px';
-    style.top = position.top + 'px';
+    const curOffset = getDimensions(elem).offset;
+    const curCSSTop = computedStyle.top;
+    const curCSSLeft = computedStyle.left;
+    style.left = (position.left - curOffset.left) + (parseFloat(curCSSLeft) || 0) + 'px';
+    style.top = (position.top - curOffset.top) + (parseFloat(curCSSTop) || 0) + 'px';
 }
 
 const rules = {
