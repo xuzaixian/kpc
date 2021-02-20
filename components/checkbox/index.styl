@@ -1,8 +1,10 @@
 @require('./variables.styl');
 
 .k-checkbox
-    display inline-block
+    display inline-flex
+    align-items center
     cursor pointer
+    vertical-align middle
     .k-wrapper
         display inline-block
         width $checkbox-width
@@ -13,6 +15,7 @@
         position relative
         transition all $transition
         background $checkbox-bg-color
+        flex 0 0 auto
         // inner
         &:before
             content ""
@@ -40,6 +43,7 @@
         vertical-align middle
         margin-left $checkbox-text-margin-left
         display inline-block
+        flex 0 1 auto
 
     // indeterminate
     // checked
@@ -76,4 +80,4 @@
             &:before
                 border-color $checkbox-disabled-inner-color 
         
-require($theme-dir + '/checkbox.styl')
+requireTheme('checkbox')

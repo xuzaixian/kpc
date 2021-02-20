@@ -4,12 +4,30 @@ import DropdownMenu from './menu';
 import '../../styles/kpc.styl';
 import './index.styl';
 
-const h = Intact.Vdt.miss.h;
+const {clone, Types, h} = Intact.Vdt.miss;
+const _className = Intact.Vdt.utils.className;
 
 export default class Dropdown extends Intact {
     @Intact.template()
     static template(data) {
-        return data.get('children');
+        const vNode = data.get('children');
+        const isShow = data.get('_isShow');
+        const className = vNode.className || vNode.props.className;
+        const extraProps = {
+            className: _className({
+                [className]: className,
+                'k-dropdown-open': isShow,
+            }),
+        };
+        const style = data.get('style');
+        if (style) {
+            extraProps.style = style;
+        }
+
+        // vNode.props = {...vNode.props, ...extraProps};
+        // return vNode;
+        // we need clone it again, even if we have cloned it in _saveOriginalEvents
+        return clone(vNode, extraProps);
     }
 
     static propTypes = {
@@ -21,6 +39,8 @@ export default class Dropdown extends Intact {
         return {
             trigger: 'hover',
             disabled: false,
+
+            _isShow: false,
         }
     }
 
@@ -34,7 +54,7 @@ export default class Dropdown extends Intact {
         let {children, trigger, className, ...rest} = this.get();
         if (Array.isArray(children)) {
             children = children[0];
-        } 
+        }
         if (isTextChildren(children)) {
             children = h('span', rest, children, className);
         }
@@ -50,6 +70,7 @@ export default class Dropdown extends Intact {
                 originProps._evClick = on.click;
                 originProps._evMouseEnter = on.mouseenter;
                 originProps._evMouseLeave = on.mouseleave;
+                // children.className = undefined;
             } else if (originProps.reactVNode) {
                 // for react element
                 const props = originProps.reactVNode.props;
@@ -74,31 +95,25 @@ export default class Dropdown extends Intact {
         if (hasSaved) {
             props._evHasSaved = true;
         }
-        children.props = {...originProps, ...props};
+        // clone vNode, because the vNode may be used multiple times,
+        // such as in vue slot, #547
+        children = clone(children, props);
+        // children.props = {...originProps, ...props};
         this.set('children', children, {silent: true});
     }
 
     _mount() {
-        // the next sibling is DropdownMenu
-        // we can not get the menu by call get('menu') directly,
-        // because the vNode may be cloned
-        // 
-        // we only handle it when mount 
-        // so you can not change the DropdownMenu by key
-        // ohterwise it can not be found 
-        const siblings = this.parentVNode.children;
-        const index = siblings.indexOf(this.vNode);
-        const menu = siblings[index + 1];
-        menu.children.dropdown = this;
-        this.menu = menu;
+        // add instance to dom, for menu to get it by previousSibling
+        this.element._dropdown = this;
     }
 
     show(fn, e, isFocus) {
         if (typeof fn === 'function') fn(e);
 
-        if (this.get('disabled')) return;
+        if (this.get('disabled') || e && e._hide === this) return;
 
-        const menu = this.menu.children;
+        const menu = this.menu;
+        menu.__event = e;
         menu.show();
 
         if (isFocus) {
@@ -111,7 +126,7 @@ export default class Dropdown extends Intact {
 
         if (this.get('disabled')) return;
 
-        const menu = this.menu.children;
+        const menu = this.menu;
         menu.hide(immediately);
     }
 }

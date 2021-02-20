@@ -1,5 +1,6 @@
 import Intact from 'intact';
 import template from './index.vdt';
+import {hasWindow} from '../utils';
 import '../../styles/kpc.styl';
 import './index.styl';
 
@@ -10,6 +11,8 @@ export default class App extends Intact {
     static propTypes = {
         loading: Boolean,
     };
+
+    static blocks = ['loading'];
 
     defaults() {
         return {
@@ -41,7 +44,9 @@ export default class App extends Intact {
             page.$app = this;
 
             // for debug
-            global.__page = page;
+            if (hasWindow) {
+                window.__page = page;
+            }
 
             const done = () => {
                 if (this._current === Page) {

@@ -1,11 +1,11 @@
 import Button from '../button';
 import Progress from '../progress';
 import Dialog from '../dialog';
-import {expandAnimationCallbacks, _$} from '../utils';
+import {expandAnimationCallbacks, _$, getRestProps} from '../utils';
 
 const {
-    className, style, accept, multiple, limit,
-    files, children, type, _dragOver,
+    className, accept, multiple, limit,
+    files, children, type, _dragOver, directory
 } = self.get();
 
 const classNameObj = {
@@ -52,13 +52,15 @@ const CloseBtn = (props) => (
     </Button>
 );
 
-<div class={{ classNameObj }} style={{ style }}>
+<div class={{ classNameObj }} {{ ...getRestProps(self) }}>
     <input type="file" 
         accept={{ accept }}
         class="c-hidden" 
         ref="input" 
-        ev-change={{ self._onInputChange}}
+        ev-change={{ self._onInputChange }}
         multiple={{ multiple }}
+        directory={{ directory ? '' : undefined }}
+        webkitdirectory={{ directory ? '' : undefined }}
     />
 
     <Animate class="k-pictures" key="pictures" a:disabled v-if={{ type === 'gallery' }}>

@@ -13,6 +13,8 @@ export default class Upload extends Intact {
 
     static request = request;
 
+    static blocks = ['content', 'tip'];
+
     defaults() {
         return {
             accept: undefined,
@@ -29,6 +31,7 @@ export default class Upload extends Intact {
             limit: undefined,
             maxSize: undefined,
             defaultFiles: undefined,
+            directory: false,
 
             beforeUpload: () => true,
             beforeRemove: () => true,
@@ -55,7 +58,14 @@ export default class Upload extends Intact {
         defaultFiles: Array,
         beforeUpload: Function,
         beforeRemove: Function,
-    }
+        directory: Boolean,
+    };
+
+    static events = {
+        error: true,
+        progress: true,
+        success: true,
+    };
 
     _init() {
         this._counter = 0;
@@ -76,6 +86,46 @@ export default class Upload extends Intact {
             });
             this.set('files', _files);
         }
+
+        this.on('$receive:accept', this._parseAccept);
+    }
+
+    _parseAccept(c, v) {
+        this.extensions = [];
+        this.mimeTypes = [];
+        this.groupTypes = [];
+        if (v) {
+            v.split(',').forEach(item => {
+                item = item.trim().toLowerCase();
+                if (item[0] === '.') {
+                    this.extensions.push(item.substring(1));
+                } else {
+                    const [type, extension] = item.split('/');
+                    if (extension === '*') {
+                        this.groupTypes.push(type);
+                    } else {
+                        this.mimeTypes.push(item);
+                    }
+                }
+            });
+        }
+    }
+
+    _isValidType(value, name) {
+        if (this.mimeTypes.find(item => item === value)) return true;
+
+        const type = value.split('/')[0];
+        const index = name.lastIndexOf('.');
+        let extension;
+        if (index > -1) {
+            extension = name.substring(index + 1).toLowerCase();
+        }
+
+        return this.extensions.find(item => {
+            return item === extension;
+        }) || this.groupTypes.find(item => {
+            return item === type;
+        });
     }
 
     submit() {
@@ -99,10 +149,10 @@ export default class Upload extends Intact {
         this._addFiles(e.target.files);
     }
 
-    _addFiles(fileList) {
+    async _addFiles(fileList) {
         const files = this.get('files').slice(0);
         const _files = Array.from(fileList);
-        const {maxSize, limit, autoUpload} = this.get();
+        const {maxSize, limit, autoUpload, accept} = this.get();
 
         if (limit && (files.length + _files.length > limit)) {
             const error =  new Error(_$('超出文件数量最大限制：{limit}', {limit}));
@@ -111,12 +161,20 @@ export default class Upload extends Intact {
 
         const status = autoUpload ? 'ready' : 'notReady';
 
-       _files.forEach(file => {
+        for (let i = 0; i < _files.length; i++) {
+            const file = _files[i];
+
             if (maxSize && file.size > maxSize * 1024) {
                 const error = new Error(
                     _$('"{name}" 超出文件最大限制：{maxSize}kb', {name: file.name, maxSize})
                 );
-                return this.trigger('error', error, file, files);
+                this.trigger('error', error, file, files);
+                continue;
+            }
+            if (accept && file.type && !this._isValidType(file.type, file.name)) {
+                const error = new Error(_$('"{name}" 文件类型不合法', {name: file.name}));
+                this.trigger('error', error, file, files);
+                continue;
             }
             const obj = {
                 status: status, 
@@ -130,9 +188,10 @@ export default class Upload extends Intact {
             if (URL && URL.createObjectURL) {
                 obj.url = URL.createObjectURL(file);
             }
-            files.push(obj);
-            if (autoUpload) this._upload(obj);
-        });
+            if (!autoUpload || (await this._upload(obj))) {
+                files.push(obj);
+            }
+        }
 
         this.set('files', files);
     }
@@ -173,8 +232,11 @@ export default class Upload extends Intact {
         if (!ret) {
             const files = this.get('files').slice(0);
             const index = files.indexOf(file);
-            files.splice(index, 1);
-            return this.set({files});
+            if (index > -1) {
+                files.splice(index, 1);
+                this.set({files});
+            }
+            return false;
         }
 
         const data = this.get('data');
@@ -198,6 +260,7 @@ export default class Upload extends Intact {
         };
 
         file.request = request(options);
+        return true;
     }
 
     _onProgress(e, file) {

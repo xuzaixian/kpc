@@ -2,9 +2,11 @@ import BasicDemo from '~/components/form/demos/basic';
 import CustomDemo from '~/components/form/demos/custom';
 import VariableDemo from '~/components/form/demos/variable';
 import RemoteDemo from '~/components/form/demos/remote';
-import {mount, unmount, dispatchEvent} from 'test/utils';
+import {mount, unmount, dispatchEvent, wait} from 'test/utils';
 import Intact from 'intact';
 import {Form, FormItem} from 'kpc/components/form';
+import Input from 'kpc/components/input';
+import ValueDemo from '~/components/form/demos/value';
 
 RemoteDemo.prototype.validateUserName = function(value) {
     // mock api
@@ -49,82 +51,70 @@ describe('Form', () => {
         });
     });
 
-    it('custom rules', (done) => {
+    it('custom rules', async () => {
         instance = mount(CustomDemo);
 
         const [input, input1] = instance.element.querySelectorAll('input');
         instance.set('descriptions.0', '1');
         dispatchEvent(input, 'focusout');
-        setTimeout(() => {
-            expect(instance.element.innerHTML).to.matchSnapshot();
+        await wait(500);
+        expect(instance.element.innerHTML).to.matchSnapshot();
 
-            instance.set('descriptions.0', 'a');
-            expect(instance.element.innerHTML).to.matchSnapshot();
-            instance.set('descriptions.1', 'a');
-            dispatchEvent(input1, 'focusout');
-            setTimeout(() => {
-                expect(instance.element.innerHTML).to.matchSnapshot();
-                instance.set('descriptions.1', 'b');
-                expect(instance.element.innerHTML).to.matchSnapshot();
-
-                done();
-            }, 500)
-        }, 500);
+        instance.set('descriptions.0', 'a');
+        expect(instance.element.innerHTML).to.matchSnapshot();
+        instance.set('descriptions.1', 'a');
+        dispatchEvent(input1, 'focusout');
+        await wait(500);
+        expect(instance.element.innerHTML).to.matchSnapshot();
+        instance.set('descriptions.1', 'b');
+        expect(instance.element.innerHTML).to.matchSnapshot();
     });
 
-    it('validate when rules have changed', (done) => {
-        instance = mount(VariableDemo); 
+    it('validate when rules have changed', async () => {
+        instance = mount(VariableDemo);
 
         const form = instance.refs.form;
 
-        form.validate().then(res => {
-            expect(res).to.be.true;
+        const res = await form.validate();
+        expect(res).to.be.true;
 
-            instance.set('firstName', 'a');
-            expect(instance.element.innerHTML).to.matchSnapshot();
-            instance.set('lastName', 'b');
-            expect(instance.element.innerHTML).to.matchSnapshot();
-
-            done();
-        });
+        instance.set('firstName', 'a');
+        expect(instance.element.innerHTML).to.matchSnapshot();
+        instance.set('lastName', 'b');
+        expect(instance.element.innerHTML).to.matchSnapshot();
     });
 
-    it('validate asynchronously', function(done) {
+    it('validate asynchronously', async function() {
         this.enableTimeouts(false);
         instance = mount(RemoteDemo);
 
         const form = instance.refs.form;
         instance.set('userName', 'a');
-        form.validate().then(res => {
-            expect(res).to.be.false;
-            expect(instance.element.innerHTML).to.matchSnapshot();
-            instance.set('userName', 'b');
-            form.validate().then(res => {
-                expect(res).to.be.true;
-                expect(instance.element.innerHTML).to.matchSnapshot();
-
-                done();
-            });
-        });
+        let res = await form.validate();
+        expect(res).to.be.false;
+        await wait(300);
+        expect(instance.element.innerHTML).to.matchSnapshot();
+        instance.set('userName', 'b');
+        res = await form.validate();
+        expect(res).to.be.true;
+        await wait(300);
+        expect(instance.element.innerHTML).to.matchSnapshot();
     });
 
-    it('should trigger submit event if form is valid', (done) => {
+    it('should trigger submit event if form is valid', async () => {
         instance = mount(RemoteDemo);
         const form = instance.refs.form;
         const cb = sinon.spy();
         form.on('submit', cb);
         instance.set('userName', 'a');
         dispatchEvent(instance.element, 'submit');
-        setTimeout(() => {
-            expect(cb.callCount).to.eql(0);
+        await wait(0);
+        expect(cb.callCount).to.eql(0);
 
-            instance.set('userName', 'b');
-            dispatchEvent(instance.element, 'submit');
-            setTimeout(() => {
-                expect(cb.callCount).to.eql(1);
-                done();
-            });
-        });
+        instance.set('userName', 'b');
+        dispatchEvent(instance.element, 'submit');
+        await wait(0);
+        expect(cb.callCount).to.eql(1);
     });
 
     it('methods', async function() {
@@ -147,6 +137,17 @@ describe('Form', () => {
         const form = instance.refs.form;
         const el = form.element;
         await form.validate();
+
+        // required
+        instance.set({rules: {required: true}, value: ''});
+        instance.set('value', '  ');
+        expect(await form.validate()).to.be.false;
+        instance.set('value', ' 1 ');
+        expect(await form.validate()).to.be.true;
+        instance.set('value', []);
+        expect(await form.validate()).to.be.false;
+        instance.set('value', ['']);
+        expect(await form.validate()).to.be.true;
 
         // digits
         instance.set({rules: {digits: true}, value: ''});
@@ -333,5 +334,56 @@ describe('Form', () => {
         await eql();
         instance.set('value1', 2);
         await eql();
+    });
+
+    it('should show icon when text shows ellipsis', async () => {
+        class Demo extends Intact {
+            @Intact.template()
+            static template = `
+                <Form ref="form">
+                    <FormItem model="value"
+                        rules={{ {
+                            required: true,
+                            digits: true,
+                        } }}
+                        messages={{ {
+                            required: 'It is a very very very very very very very very very very very very very very very very very very long text.',
+                        } }}
+                        ref="formItem"
+                    >
+                        <Input v-model="value" />
+                    </FormItem>
+                </Form>
+            `
+            _init() {
+                this.Form = Form;
+                this.FormItem = FormItem;
+                this.Input = Input;
+            }
+        }
+        instance = mount(Demo);
+
+        const {form, formItem} = instance.refs;
+        await form.validate();
+        expect(formItem.refs.error.parentElement.classList.contains('k-ellipsis')).to.be.true;
+
+        instance.set('value', 'a');
+        await form.validate();
+        expect(formItem.refs.error.parentElement.classList.contains('k-ellipsis')).to.be.false;
+
+        instance.set('value', '');
+        await form.validate();
+        expect(formItem.refs.error.parentElement.classList.contains('k-ellipsis')).to.be.true;
+    });
+
+    it('validate by value', async () => {
+        instance = mount(ValueDemo);
+        const form = instance.refs.form;
+
+        expect(await form.validate()).to.be.false;
+        instance.set('value', 'test');
+        expect(await form.validate()).to.be.true;
+        instance.set('value', '');
+        expect(await form.validate()).to.be.false;
     });
 });

@@ -50,7 +50,7 @@ const i18n = {
 
     // dialog
     '提示': 'Tip',
-    '确认': 'OK',
+    '确定': 'OK',
     '取消': 'Cancel',
     '关闭': 'Close',
 
@@ -96,6 +96,7 @@ const i18n = {
 
     // select
     '请输入或选择': 'Please enter or select',
+    '无数据': 'No data',
 
     // upload
     '点击上传': 'Click to Upload',
@@ -103,6 +104,10 @@ const i18n = {
     '查看图片': 'View Image',
     '超出文件数量最大限制：{limit}': 'Exceed the maximum limit of the number of files: {limit}',
     '"{name}" 超出文件最大限制：{maxSize}kb': '"{name}" exceeds the maximum size of file: {maxSize}kb',
+    '"{name}" 文件类型不合法': '"{name}" invalid file type',
+
+    // search
+    '请输入关键字': 'Please enter keywords',
 };
 
 export default i18n; 

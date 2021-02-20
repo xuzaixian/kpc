@@ -68,7 +68,8 @@ export default class extends Intact {
         // 如果删除当前tab，则切换至下一个
         let tab = this.get('tab');
         if (value === tab) {
-            tab = (tabs[index] || tabs[index - 1]).value
+            const item = tabs[index] || tabs[index - 1];
+            tab = item ? item.value : null;
         }
 
         this.set({tabs, tab});
@@ -86,6 +87,7 @@ export default class extends Intact {
 }
 ```
 
+
 ```vue-methods
 _remove(value) {
     const index = this.tabs.findIndex(item => item.value === value);
@@ -98,17 +100,11 @@ _remove(value) {
 }
 
 _add() {
-    const id = ++this.id;
+    id++;
     this.tabs.push({
         value: id,
         label: `Tab ${id}`,
     });
     this.tab = id;
-}
-```
-
-```vue-script
-beforeCreate() {
-    this.id = 3;
 }
 ```

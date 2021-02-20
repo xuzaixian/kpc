@@ -1,6 +1,8 @@
-const {to, separator, children} = self.get();
+import {getRestProps} from '../utils';
 
-<div class="k-item">
+const {to, separator, children, className} = self.get();
+
+<div class={{ {"k-item": true, [className]: className} }} {{ ...getRestProps(self) }}>
     <a v-if={{ to }} ev-click={{ self.onClick }} class="k-item-link">{{ children }}</a>
     <span v-else class="k-item-link">{{ children }}</span>
     <span v-if={{ separator != null }} class="k-separator">

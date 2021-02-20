@@ -1,5 +1,5 @@
 /*!
- * kpc v0.7.10
+ * kpc v1.4.8
  *
  * Copyright (c) Kingsoft Cloud
  * Released under the MIT License
@@ -12,20 +12,26 @@ import {_$, localize} from './components/utils';
 
 /* generate start */
 
+import {Affix} from './components/affix';
 import {App} from './components/app';
 import {Badge} from './components/badge';
 import {Breadcrumb, BreadcrumbItem} from './components/breadcrumb';
 import {Button, ButtonGroup} from './components/button';
+import {Card, CardColumn} from './components/card';
+import {Carousel, CarouselItem} from './components/carousel';
 import {Cascader} from './components/cascader';
 import {Checkbox} from './components/checkbox';
 import {Collapse, CollapseItem} from './components/collapse';
+import {Colorpicker} from './components/colorpicker';
 import {Datepicker} from './components/datepicker';
 import {Dialog} from './components/dialog';
 import {Drawer} from './components/drawer';
 import {Dropdown, DropdownMenu, DropdownItem} from './components/dropdown';
 import {Editable} from './components/editable';
 import {Form, FormItem} from './components/form';
-import {Input} from './components/input';
+import {Icon} from './components/icon';
+import {Input, Search} from './components/input';
+import {Layout, Aside, Header, Body, Footer} from './components/layout';
 import {Link} from './components/link';
 import {Menu, MenuItem} from './components/menu';
 import {Message} from './components/message';
@@ -33,12 +39,14 @@ import {MoveWrapper} from './components/moveWrapper';
 import {Pagination} from './components/pagination';
 import {Progress} from './components/progress';
 import {Radio} from './components/radio';
+import {Rate} from './components/rate';
 import {Row, Col} from './components/grid';
 import {ScrollSelect} from './components/scrollSelect';
 import {Select, Option, OptionGroup} from './components/select';
 import {Slider} from './components/slider';
 import {Spinner} from './components/spinner';
 import {Spin} from './components/spin';
+import {Split} from './components/split';
 import {Steps, Step} from './components/steps';
 import {Switch} from './components/switch';
 import {Table, TableColumn} from './components/table';
@@ -49,21 +57,30 @@ import {Timepicker} from './components/timepicker';
 import {Tip} from './components/tip';
 import {Tooltip} from './components/tooltip';
 import {Transfer} from './components/transfer';
+import {TreeSelect} from './components/treeSelect';
 import {Tree} from './components/tree';
 import {Upload} from './components/upload';
 
 export {
+    Affix,
     App,
+    Aside,
     Badge,
+    Body,
     Breadcrumb,
     BreadcrumbItem,
     Button,
     ButtonGroup,
+    Card,
+    CardColumn,
+    Carousel,
+    CarouselItem,
     Cascader,
     Checkbox,
     Col,
     Collapse,
     CollapseItem,
+    Colorpicker,
     Datepicker,
     Dialog,
     Drawer,
@@ -71,9 +88,13 @@ export {
     DropdownItem,
     DropdownMenu,
     Editable,
+    Footer,
     Form,
     FormItem,
+    Header,
+    Icon,
     Input,
+    Layout,
     Link,
     Menu,
     MenuItem,
@@ -84,12 +105,15 @@ export {
     Pagination,
     Progress,
     Radio,
+    Rate,
     Row,
     ScrollSelect,
+    Search,
     Select,
     Slider,
     Spin,
     Spinner,
+    Split,
     Step,
     Steps,
     Switch,
@@ -105,21 +129,30 @@ export {
     Tooltip,
     Transfer,
     Tree,
+    TreeSelect,
     Upload
 };
 
 const components = {
+    Affix,
     App,
+    Aside,
     Badge,
+    Body,
     Breadcrumb,
     BreadcrumbItem,
     Button,
     ButtonGroup,
+    Card,
+    CardColumn,
+    Carousel,
+    CarouselItem,
     Cascader,
     Checkbox,
     Col,
     Collapse,
     CollapseItem,
+    Colorpicker,
     Datepicker,
     Dialog,
     Drawer,
@@ -127,9 +160,13 @@ const components = {
     DropdownItem,
     DropdownMenu,
     Editable,
+    Footer,
     Form,
     FormItem,
+    Header,
+    Icon,
     Input,
+    Layout,
     Link,
     Menu,
     MenuItem,
@@ -140,12 +177,15 @@ const components = {
     Pagination,
     Progress,
     Radio,
+    Rate,
     Row,
     ScrollSelect,
+    Search,
     Select,
     Slider,
     Spin,
     Spinner,
+    Split,
     Step,
     Steps,
     Switch,
@@ -161,10 +201,11 @@ const components = {
     Tooltip,
     Transfer,
     Tree,
+    TreeSelect,
     Upload
 };
 
-export const version = '0.7.10';
+export const version = '1.4.8';
 
 /* generate end */
 
@@ -173,10 +214,13 @@ export default function install(Vue) {
 
     if (Vue) {
         for (let key in components) {
-            Vue.component(`K${key}`, components[key]);
+            const component = components[key];
+            Vue.component(`K${key}`, component);
             // support call method like this.$message.success('test'), #88
             if (key === 'Message') {
-                Vue.prototype.$message = components.Message;
+                Vue.prototype.$message = component;
+            } else if (key === 'Dialog') {
+                Vue.prototype.$dialog = component;
             }
         }
     } else {

@@ -19,6 +19,7 @@
         position absolute
         top 50%
         transform translateY(-50%)
+        color $select-icon-color
         // line-height 1
 
     // fluid
@@ -30,17 +31,25 @@
         opacity 0
         transition opacity $transition
         pointer-events none
-        &:hover
-            color $primary-color
-    &.k-with-suffix
-        .k-clear
-            margin-right $select-clear-margin-right
+        position absolute
+        z-index 1
+    // &.k-with-suffix
+    //     .k-clear
+    //         margin-right $select-clear-margin-right
     &:hover
         > .k-wrapper
             border $select-hover-border
         .k-clear.k-show
             opacity 1
             pointer-events all
+    .k-suffix-icon
+        display inline-block
+        transition opacity $transition
+    &.k-clearable
+        &:hover
+            .k-clear.k-show + .k-suffix-icon
+                opacity 0
+
 
     // filterable
     .k-input
@@ -86,11 +95,17 @@
             color $select-disabled-color
             background $select-disabled-bg-color
             cursor not-allowed
+        // multiple
+        .k-select-tag
+            background $select-multiple-disabled-tag-bg-color 
 
     // multiple
     .k-values
         display inline-block
         line-height 1
+        // remove margin if we specified values extension point
+        &.k-with-values
+            margin 0
     .k-select-tag
         padding $select-multiple-tag-padding 
         background $select-multiple-tag-bg-color
@@ -101,27 +116,35 @@
         .k-icon
             display inline-block
             vertical-align middle
-        .k-icon
+        .k-close
             margin-left $select-multiple-tag-delete-icon-margin-left 
             &:before
                 font-size $select-multiple-tag-delete-icon-font-size 
-            &:hover
+    &:not(.k-disabled)
+        .k-select-tag
+            .k-close:hover
                 color $select-multiple-tag-delete-icon-hover-color
-    // inline
-    &.k-inline
-        width auto
-        > .k-wrapper
-            border none
-            min-height 0
-        .k-placeholder
-        .k-value
-            line-height inherit
-
+        .k-clear:hover
+            color $primary-color
     // size
     generate(size)
         font-size lookup('$select-' + size + '-font-size')
         > .k-wrapper
             min-height lookup('$select-' + size + '-height')
+        .k-input
+        .k-placeholder
+        .k-value
+            line-height s('calc(%s - 2px)', lookup('$select-' + size + '-height'))
+        .k-input
+            .k-inner
+                height s('calc(%s - 2px)', lookup('$select-' + size + '-height'))
+        .k-values
+            margin-top lookup('$select-' + size + '-multiple-values-margin')
+            margin-right -(getRight(lookup('$select-' + size + '-multiple-tag-margin')))
+            .k-input
+                margin-top -(lookup('$select-' + size + '-multiple-values-margin')) 
+        .k-select-tag
+            margin lookup('$select-' + size + '-multiple-tag-margin')
         if lookup('$select-' + size + '-padding-left-right')
             .k-main
                 padding 0 lookup('$select-' + size + '-padding-left-right')
@@ -136,23 +159,9 @@
             &.k-clearable
                 .k-main
                     padding-right lookup('$select-' + size + '-suffix-padding-right') 
-            &.k-with-suffix.k-clearable
-                .k-main
-                    padding-right lookup('$select-' + size + '-clearable-suffix-padding-right')
-            .k-input
-            .k-placeholder
-            .k-value
-                line-height s('calc(%s - 2px)', lookup('$select-' + size + '-height'))
-            .k-input
-                .k-inner
-                    height s('calc(%s - 2px)', lookup('$select-' + size + '-height'))
-            .k-values
-                margin-top lookup('$select-' + size + '-multiple-values-margin')
-                margin-right -(getRight(lookup('$select-' + size + '-multiple-tag-margin')))
-                .k-input
-                    margin-top -(lookup('$select-' + size + '-multiple-values-margin')) 
-            .k-select-tag
-                margin lookup('$select-' + size + '-multiple-tag-margin')
+            // &.k-with-suffix.k-clearable
+            //     .k-main
+            //         padding-right lookup('$select-' + size + '-clearable-suffix-padding-right')
         if lookup('$select-' + size + '-padding-left')
             &.k-clearable
                 > .k-wrapper
@@ -163,13 +172,25 @@
                 generate(size)
         else
             generate(size)
-       
+
+    // inline
+    &.k-inline
+        width auto
+        > .k-wrapper
+            border none
+            min-height 0
+            background transparent
+        .k-placeholder
+        .k-value
+            line-height inherit
+
+
 .k-select-dropdown
     min-width auto
     max-height $select-dropdown-max-height
     overflow auto
     .k-active
-        color $primary-color
+        color $select-active-color
     .k-item
         white-space nowrap
         overflow hidden
@@ -202,5 +223,38 @@
         &:before
             font-size $select-multiple-checkmark-font-size
 
+    // no data
+    .k-no-data
+        padding $select-no-data-padding
+        color $select-no-data-color 
+        text-align center
 
-require($theme-dir + '/select.styl')
+    // searchable
+    &.k-searchable
+        max-height none
+        padding $select-searchable-padding
+        .k-select-header
+            padding-bottom $select-searchable-header-padding-bottom
+            border-bottom $select-searchable-border
+            display flex
+            margin-bottom $select-searchable-header-margin-bottom
+        .k-select-op
+            white-space nowrap
+            .k-btn
+                padding $select-searchable-header-btn-padding
+                margin-left $select-searchable-header-btn-margin-left
+        .k-select-body
+            max-height $select-dropdown-max-height
+            overflow auto
+            .k-checkbox
+            .k-item:not(.k-no-padding)
+                padding $select-searchable-item-padding
+        .k-select-footer
+            border-top $select-searchable-border
+            padding-top $select-searchable-footer-padding-top
+            text-align right
+            margin-top $select-searchable-footer-margin-top
+            .k-btn
+                margin-left $select-searchable-footer-btn-margin-left
+
+requireTheme('select')

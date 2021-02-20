@@ -6,6 +6,8 @@ order: 5
 给组件指定`format`扩展点，可以自定义选择结果显示，组件会将当前选择的数据项以数组的格式作为参数传入
 
 > Vue下通过`slot="format" slot-scope="values"`指定
+> 
+> 暂时不支持`format`扩展点和`filterable`属性一起使用
 
 ```vdt
 import Cascader from 'kpc/components/cascader';
@@ -13,7 +15,7 @@ import Cascader from 'kpc/components/cascader';
 <Cascader data={{ self.get('data') }} clearable>
     <b:format params="values">
         <div v-if={{ values.length }}>
-            <i class="ion-ios-location" style="line-height: 1; margin-right: 8px;"></i>
+            <i class="ion-ios-location" style="line-height: 1; margin-right: 8px; vertical-align: middle;"></i>
             {{ values[values.length - 1].label }}
         </div>
     </b:format>

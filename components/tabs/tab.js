@@ -7,8 +7,12 @@ export default class Tab extends Intact {
 
     static propTypes = {
         disabled: Boolean,
-        to: String,
+        to: [String, Object],
         closable: Boolean,
+    };
+
+    static events = {
+        click: true,
     };
 
     defaults() {

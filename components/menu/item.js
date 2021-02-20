@@ -3,6 +3,13 @@ import template from './item.vdt';
 import DropdownItem from '../dropdown/item';
 import Dropdown from '../dropdown/dropdown';
 import Menu from './menu';
+import {findRouter, isExternalLink} from '../utils';
+
+class Wrapper extends Intact {
+    template(data) {
+        return data.get('children');
+    }
+}
 
 export default class MenuItem extends DropdownItem {
     @Intact.template()
@@ -14,8 +21,13 @@ export default class MenuItem extends DropdownItem {
             type: String,
             required: true,
         },
-        to: String,
+        to: [String, Object],
         dot: Boolean,
+    };
+
+    static events = {
+        click: true,
+        select: true,
     };
 
     defaults() {
@@ -29,10 +41,13 @@ export default class MenuItem extends DropdownItem {
             _isFirstFloorChildren: false,
             _show: false,
             _parentItem: undefined,
+            _parentMenu: undefined,
         };
     }
 
     _init() {
+        this.Wrapper = Wrapper;
+
         // if selected hide all dropdown menu
         // the top ancestor dropdown menu can not hide
         // so we override the method here
@@ -52,9 +67,18 @@ export default class MenuItem extends DropdownItem {
                 ancestor.hide(true);
             }
         });
+    }
+
+    _beforeCreate() {
+        // we must do this in _beforeCreate method for Angular
         const _root = this.get('_root');
         this._updateStatus(_root, _root.get('selectedKey'));
         _root.on('$change:selectedKey', this._updateStatus);
+    }
+
+    _mount() {
+        super._mount();
+        this.$router = findRouter(this);
     }
 
     _updateStatus(c, v) {
@@ -82,8 +106,9 @@ export default class MenuItem extends DropdownItem {
         if (this.get('disabled')) return;
 
         const root = this.get('_root');
+        const menu = this.get('_parentMenu');
         if (hasSubMenu) {
-            root.toggleExpand(this.get('key'));
+            root.toggleExpand(this.get('key'), menu);
         } else {
             root.select(this.get('key'));
         }
@@ -94,7 +119,11 @@ export default class MenuItem extends DropdownItem {
             this.trigger('select', this, e);
             const to = this.get('to');
             if (to) {
-                location.href = to;
+                if (this.$router && !isExternalLink(to)) {
+                    this.$router.push(to);
+                } else {
+                    location.href = to;
+                }
             }
         }
     }
@@ -117,6 +146,8 @@ export default class MenuItem extends DropdownItem {
     }
 
     _destroy() {
+        // because we cloned this vNode, the original instance need not to be destroyed
+        if (this._isAngular) return;
         this.get('_root').off('$change:selectedKey', this._updateStatus);
         super._destroy();
     }

@@ -23,11 +23,18 @@ export default class Tag extends Intact {
         closed: Boolean,
         disabled: Boolean,
         size: ['large', 'default', 'small', 'mini']
-    }
+    };
 
-    _close() {
-        this.set('closed', true);
-        this.trigger('close');
+    static events = {
+        close: true,
+    };
+
+    _close(e) {
+        e.stopPropagation();
+        this.trigger('close', e);
+        if (!e.defaultPrevented) {
+            this.set('closed', true);
+        }
     }
 }
 

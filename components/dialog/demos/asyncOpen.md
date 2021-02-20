@@ -20,6 +20,7 @@ order: 5
 
 ```js
 // @file dialog.js
+import Intact from 'intact';
 import Dialog from 'kpc/components/dialog';
 import template from './dialog.vdt';
 
@@ -87,4 +88,12 @@ export default class extends Intact {
 
 ```vue-ignore
 Vue不支持继承的用法，请使用Dialog组件用法
+```
+
+```react-ignore
+React不支持继承用法，请使用Dialog组件用法
+```
+
+```angular-ignore
+Angular不支持继承用法，请使用Dialog组件用法
 ```

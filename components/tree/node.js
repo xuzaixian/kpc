@@ -1,19 +1,20 @@
 let uniqueId = 0;
+const prefix = '__$_';
 
 export default class Node {
     static createNode = function(data, parent, tree, needRecheckNodes) {
-        const key = data.key == null ? uniqueId++ : data.key;
+        const key = data.key == null ? `${prefix}${uniqueId++}` : data.key;
         // if the node has been set to checked
         // we should set its children to checked
         // and recheck the parent to set to checked or indeterminate
         const checkedKeys = tree.checkedKeys;
         let checked = checkedKeys.has(key);
         let needRecheck = false;
-        if (parent) {
+        if (parent && !tree.get('uncorrelated')) {
             if (checked && !parent.checked) {
                 // need look back
                 needRecheck = true;
-            } else {
+            } else if (!data.disabled) {
                 checked = parent.checked;
             }
         }
@@ -55,7 +56,7 @@ export default class Node {
         this.key = key;
         this.children = undefined;
         this.tree = tree;
-        this.loaded = undefined;
+        this.loaded = data.loaded === undefined && data.children && data.children.length ? true : data.loaded;
         this.filter = true;
     }
 
@@ -64,7 +65,9 @@ export default class Node {
         this.indeterminate = false;
 
         this.tree._updateCheckedKeys(this);
-        
+
+        if (this.tree.get('uncorrelated')) return;
+
         const children = this.children;
         if (children) {
             for (let i = 0; i < children.length; i++) {
@@ -77,11 +80,13 @@ export default class Node {
     }
 
     updateUpward() {
+        if (this.tree.get('uncorrelated')) return;
+
         const parent = this.parent;
         if (!parent || parent === this.tree.root) return;
 
         let checkedCount = 0;
-        let count = 0; 
+        let count = 0;
         let indeterminate;
         const children = parent.children;
         for (let i = 0; i < children.length; i++) {
@@ -121,20 +126,60 @@ export default class Node {
             data = [data];
         }
         const children = this.children || (this.children = []);
+        const originChildren = this.data.children || (this.data.children = []);
         const needRecheckNodes = [];
         data.forEach(item => {
             const node = Node.createNode(item, this, this.tree, needRecheckNodes);
             children.push(node);
+            originChildren.push(item);
         });
 
         this.tree.expand(this.key, false);
         this.tree.update();
     }
 
-    remove() {
+    remove(noUpdate) {
         const siblings = this.parent.children;
-        siblings.splice(siblings.indexOf(this), 1);
+        const originSiblings = this.parent.data.children;
+        const index = siblings.indexOf(this);
+
+        if (!~index) {
+            return;
+        }
+        siblings.splice(index, 1);
+        originSiblings.splice(index, 1);
+
+        if (noUpdate) return;
         this.updateUpward();
+        this.tree.update();
+    }
+
+    _insert(node, index) {
+        const siblings = node.parent.children;
+        const originSiblings = node.parent.data.children;
+        index = siblings.indexOf(node) + index;
+        siblings.splice(index, 0, this);
+        originSiblings.splice(index, 0, this.data);
+        this.parent = node.parent;
+        this.updateUpward();
+        this.tree.update();
+    }
+
+    insertBefore(node) {
+        this._insert(node, 0);
+    }
+
+    insertAfter(node) {
+        this._insert(node, 1);
+    }
+
+    appendTo(node) {
+        this.parent = node;
+        const children = node.children || (node.children = []);
+        const originChildren = node.data.children || (node.data.children = []);
+        children.push(this);
+        originChildren.push(this.data);
+        this.tree.expand(node.key, false);
         this.tree.update();
     }
 }

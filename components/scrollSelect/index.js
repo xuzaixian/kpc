@@ -8,6 +8,8 @@ export default class ScrollSelect extends Intact {
     @Intact.template()
     static template = template;
 
+    static blocks = ['append'];
+
     static propTypes = {
         count: Number,
         data: [Array, Function],
@@ -32,6 +34,10 @@ export default class ScrollSelect extends Intact {
     }
 
     _init() {
+        // maybe the receive event of data or count is triggered before value
+        // fix #186
+        this.set('_value', this.get('value'), {silent: true});
+
         this.on('$receive:value', (c, v) => {
             this.set('_value', v);
         });
@@ -62,9 +68,12 @@ export default class ScrollSelect extends Intact {
     }
 
     _mount() {
+        const count = this.get('count');
         const height = this.element.offsetHeight;
-        const totalHeight = this.refs.wrapper.offsetHeight; 
-        this._deltaY = -Math.floor((totalHeight - height) / 2);
+        const itemHeight = this.refs.item.offsetHeight;
+        // const totalHeight = this.refs.wrapper.offsetHeight; 
+        // for even count, #211
+        this._deltaY = -(Math.floor(count / 2) * itemHeight - (height - itemHeight) / 2);
         this.set({
             _translate: this._deltaY 
         });

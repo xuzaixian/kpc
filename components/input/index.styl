@@ -16,6 +16,7 @@
         transition border $transition, background $transition, box-shadow $transition 
         outline none
         position relative
+        color $input-color
         &:hover
             border $input-hover-border
             z-index 1
@@ -36,6 +37,8 @@
 
     // clearable
     .k-clear
+        display inline-block
+        vertical-align top
         cursor pointer
         opacity 0
         transition opacity $transition
@@ -43,11 +46,24 @@
         color $input-clear-icon-color
         &:hover
             color $primary-color
-    .k-inner:focus + .k-suffix .k-clear.k-show
+        + *
+            margin-left $input-suffix-clear-margin-right 
+    // .k-inner:focus + .k-suffix .k-clear.k-show
     &:hover .k-clear.k-show
         opacity 1
         pointer-events all
 
+    // stack clear icon
+    &.k-stack-clear
+        .k-clear
+            position absolute
+            z-index 1
+            right 0
+        .k-clear.k-show + i
+            transition opacity $transition
+        &:hover
+            .k-clear.k-show + i
+                opacity 0
 
     // group
     &.k-group
@@ -116,7 +132,7 @@
             &.k-clearable
                 .k-inner
                     padding-right lookup('$input-' + size + '-suffix-padding-right') 
-            &.k-with-suffix.k-clearable
+            &:not(.k-stack-clear).k-with-suffix.k-clearable
                 .k-inner
                     padding-right lookup('$input-' + size + '-clearable-suffix-padding-right')
     for size in large default small mini
@@ -125,12 +141,13 @@
                 generate(size)
         else
             generate(size)
-            
+
     // textarea
     .k-textarea
         padding $input-textarea-padding
         height auto
         line-height 1.5
+        vertical-align top
 
     // fake dom for get value's width
     .k-fake
@@ -144,4 +161,4 @@
             box-sizing content-box
 
 
-require($theme-dir + '/input.styl')
+requireTheme('input')

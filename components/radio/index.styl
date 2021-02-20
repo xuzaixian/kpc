@@ -1,8 +1,10 @@
 @require('./variables.styl');
 
 .k-radio
-    display inline-block
+    display inline-flex
+    align-items center
     cursor pointer
+    vertical-align middle
     .k-wrapper
         display inline-block
         width $radio-width
@@ -13,6 +15,7 @@
         transition all $transition 
         position relative
         background $radio-bg-color
+        flex 0 0 auto
         // inner
         &:before
             content ""
@@ -39,6 +42,7 @@
         vertical-align middle
         display inline-block
         margin-left $radio-text-margin-left
+        flex 0 1 auto
 
     // checked
     &.k-checked
@@ -63,4 +67,4 @@
                 background $radio-disabled-inner-color
 
 
-require($theme-dir + '/radio.styl')
+requireTheme('radio')

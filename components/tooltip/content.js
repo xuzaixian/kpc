@@ -1,10 +1,21 @@
 import Intact from 'intact';
 import DropdownMenu from '../dropdown/menu';
 import position from '../moveWrapper/position';
-import template from './index.vdt';
+import template from './content.vdt';
 import '../../styles/kpc.styl';
 import './index.styl';
-import {findParentComponent, _$} from '../utils';
+import {findParentComponent, _$, clamp} from '../utils';
+
+const Types = Intact.Vdt.miss.Types;
+const isEmptyChildren = (vNodes) => {
+    if (!vNodes) return true;
+    if (Array.isArray(vNodes)) {
+        return vNodes.every(vNode => isEmptyChildren(vNode));
+    }
+    if (vNodes.type === Types.Text) {
+        return !vNodes.children;
+    }
+};
 
 export default class TooltipContent extends DropdownMenu {
     @Intact.template()
@@ -18,6 +29,18 @@ export default class TooltipContent extends DropdownMenu {
         confirm: Boolean,
         okText: String,
         cancelText: String,
+        theme: ['dark', 'light'],
+        disabled: Boolean,
+        always: Boolean,
+        size: ['small', 'default'],
+    };
+
+    static events = {
+        ...DropdownMenu.events,
+        beforeShow: true,
+        beforeHide: true,
+        cancel: true,
+        ok: true,
     };
 
     defaults() {
@@ -27,8 +50,12 @@ export default class TooltipContent extends DropdownMenu {
             showArrow: true,
             transition: 'c-fade',
             confirm: false,
-            okText: _$('确认'),
+            okText: _$('确定'),
             cancelText: _$('取消'),
+            theme: 'dark',
+            disabled: false,
+            always: false,
+            size: 'default',
 
             _feedback: {},
         };
@@ -40,22 +67,26 @@ export default class TooltipContent extends DropdownMenu {
         this.on('$change:value', (c, value) => {
             this.trigger(value ? 'beforeShow' : 'beforeHide', this);
         });
+        this.on('$receive:children', (c, vNodes) => {
+            this.isEmptyChildren = isEmptyChildren(vNodes);
+        });
     }
 
     _mount() {
         super._mount();
 
-        if (this.get('value')) {
-            this._addDocumentClick();
+        if (this.get('value') && !this.isEmptyChildren) {
+            this.position('none');
+            this._addDocumentEvents();
         }
     }
 
     show() {
         // don't show if content is empty
-        if (!this.get('children')) return;
+        if (this.get('disabled') || this.isEmptyChildren) return;
 
         clearTimeout(this.timer);
-        this.set('value', true); 
+        this.set('value', true);
     }
 
     hide(immediately) {
@@ -68,7 +99,7 @@ export default class TooltipContent extends DropdownMenu {
         }
     }
 
-    position() {
+    position(collision = 'flipfit') {
         let pos = this.get('position');
         if (typeof pos === 'string') {
             switch (pos) {
@@ -88,10 +119,10 @@ export default class TooltipContent extends DropdownMenu {
         }
         const element = this.refs.menu.element;
         position(element, {
-            my: 'center bottom-10', 
-            at: 'center top', 
+            my: 'center bottom-10',
+            at: 'center top',
             of: this.dropdown.element,
-            collision: 'flipfit',
+            collision,
             using: (feedback) => {
                 this.set('_feedback', feedback);
 
@@ -99,14 +130,26 @@ export default class TooltipContent extends DropdownMenu {
 
                 const arrow = this.refs.arrow;
                 const {target, element} = feedback;
-                if (feedback.horizontal === 'center') {
-                    const left = target.left - element.left + target.width / 2;
+                if (feedback.important === 'vertical') {
+                    const arrowWidth = arrow.offsetWidth;
+                    let left;
+                    if (feedback.horizontal === 'center')  {
+                        left = (element.width - arrowWidth) / 2;
+                    } else {
+                        left = target.left - element.left + (target.width - arrowWidth) / 2;
+                    }
+                    left = clamp(left, 1, element.width - 1 - arrowWidth);
                     arrow.setAttribute('style', `left: ${left}px`);
-                } else if (feedback.vertical === 'middle') {
-                    const top = target.top - element.top + target.height / 2;
-                    arrow.setAttribute('style', `top: ${top}px`);
                 } else {
-                    arrow.setAttribute('style', 'display: none');
+                    const arrowHeight = arrow.offsetHeight;
+                    let top;
+                    if (feedback.vertical === 'middle') {
+                        top = (element.height - arrowHeight) / 2;
+                    } else {
+                        top = target.top - element.top + target.height / 2 - arrowHeight / 2;
+                    }
+                    top = clamp(top, 1, element.height - 1 - arrowHeight);
+                    arrow.setAttribute('style', `top: ${top}px`);
                 }
             },
             ...pos
@@ -126,6 +169,16 @@ export default class TooltipContent extends DropdownMenu {
         this.trigger('ok', this);
         this.hide(true);
     }
+
+    _onDocumentClick(e) {
+        if (this.get('always')) return;
+        super._onDocumentClick(e);
+    }
+
+    _removeDocumentEvents() {
+        // because disabled property can hide layer, so we should set the value
+        // to false to let it hide also on next update with disabled is true, #443
+        this.set('value', false);
+        super._removeDocumentEvents();
+    }
 }
-
-

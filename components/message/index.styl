@@ -29,29 +29,34 @@
         border-radius $message-border-radius
         margin-bottom $message-margin-bottom 
         pointer-events all
-        > .k-icon
+        > .k-wrapper
+            position relative
             display inline-block
-            vertical-align middle
-            padding-left $message-icon-padding-left 
-            margin-top 1px
-            if $message-icon-color != inherit
-                color $message-icon-color
-            &:before
-                font-size $message-icon-font-size 
-        > .k-content
-            display inline-block
-            padding $message-content-padding 
-            vertical-align middle
-            word-break break-all
+            > .k-content
+                display inline-block
+                padding $message-content-padding 
+                vertical-align middle
+                word-break break-word
+                word-wrap break-word
+            &.k-with-icon
+                padding-left $message-icon-left + unit(14 / $rem, rem)
         > .k-close
             vertical-align middle
             .k-icon:before
                 font-size $message-close-font-size 
+    .k-message-icon
+        position absolute
+        left $message-icon-left
+        top $message-icon-top 
+        if $message-icon-color != inherit
+            color $message-icon-color
+        &:before
+            font-size $message-icon-font-size 
 
     // type
     for type in danger success warning
-        &.k-{type} > .k-container > .k-icon
+        &.k-{type} .k-message-icon
             color lookup('$message-' + type + '-color')
 
 
-require($theme-dir + '/message.styl')
+requireTheme('message')

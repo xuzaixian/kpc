@@ -1,4 +1,6 @@
-const {size, center, style, className, overlay} = self.get();
+import {getRestProps} from '../utils';
+
+const {size, center, className, overlay} = self.get();
 
 const classNameObj = {
     'k-spin': true,
@@ -19,8 +21,8 @@ const canvas = (
 );
 
 <Animate class={{ classNameObj }}
+    {{ ...getRestProps(self) }}
     a:transition="c-fade"
-    style={{ style }}
 >
     <div class="k-wrapper" v-if={{ overlay }}>{{ canvas }}</div>
     <template v-else>{{ canvas }}</template>

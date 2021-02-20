@@ -1,18 +1,20 @@
 ---
 title: 定制主题
-order: 1
+order: 1.3
 sidebar: doc
 ---
 
 在快速开始章节我们提到过“多文件半构建版”可以支持主题定制。因为这个版本样式文件使用了
 源码`stylus`，所以我们可以引入主题文件在构建时生成自定义主题的css样式。
 
+> 你可以使用[在线主题定制工具](https://kpc-theme.ksyun.com/)来制作主题
+
 得益于`stylus-loader`的`import`配置，我们可以指定一个主题文件，它会在编译每一个stylus
 文件时引入它。
 
 # 配置`webpack.config.js`
 
-```js
+```javascript
 const path = require('path');
 
 // 其他配置参见快速开始章节，这里略去
@@ -24,6 +26,12 @@ const path = require('path');
         'resolve url': true,
         // 引入自定义主题文件mytheme/index.styl
         import: path.resolve(__dirname, 'styles/mytheme/index.styl')
+
+        /* 对于stylus-loader@4 */
+        // stylusOptions: {
+        //     incluceCss: true,
+        //     import: [path.resolve(__dirname, 'styles/mytheme/index.styl')],
+        // }
     }
 }
 ```
@@ -106,7 +114,7 @@ $theme-dir := __dirname()
 此时`$theme-dir`指向`styles/mytheme`目录，kpc会在该目录下检测主题文件。
 
 > kpc已经定义好了stylus的`__dirname`方法，你也可以直接使用
-> `use('../../node_modules/kpc/styles/function.js')`。具体加载路径根据你的主题文件路径而定
+> `use('../../node_modules/kpc/styles/functions.js')`。具体加载路径根据你的主题文件路径而定
 
 3. 在`styles/mytheme/`下新建`button.styl`文件（文件名必须与组件名对应），添加`k-dashed`
 样式定义

@@ -1,0 +1,47 @@
+{
+  "name": "kpc-react",
+  "version": "1.4.8",
+  "description": "KPC components for React.",
+  "keywords": [
+    "component",
+    "intact",
+    "ui",
+    "components",
+    "library",
+    "react",
+    "king-design",
+    "kpc"
+  ],
+  "author": "Javey <jiawei23716@sina.com>",
+  "homepage": "https://design.ksyun.com",
+  "license": "MIT",
+  "module": "index.js",
+  "main": "dist/kpc.react.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ksc-fe/kpc.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "bugs": {
+    "url": "https://github.com/ksc-fe/kpc/issues"
+  },
+  "dependencies": {
+    "@babel/runtime-corejs3": "^7.9.2",
+    "core-js": "^3.6.4",
+    "dayjs": "^1.8.15",
+    "downloadjs": "^1.4.7",
+    "enquire.js": "^2.1.6",
+    "intact": "^2.5.15",
+    "intact-react": "^1.1.30",
+    "monaco-editor": "^0.17.1",
+    "mxgraphx": "^4.0.7",
+    "resize-observer-polyfill": "^1.5.0",
+    "tinycolor2": "^1.4.1"
+  },
+  "sideEffects": [
+    "*.css",
+    "*.styl"
+  ]
+}

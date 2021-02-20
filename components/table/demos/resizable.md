@@ -1,9 +1,12 @@
 ---
 title: 表头是否可拖动
-order: 12
+order: 20
 ---
 
-`resizable`：表头是否可拖动，类型`Boolean`，`false`(默认)
+`resizable`：表头是否可拖动，类型`Boolean`，`false`(默认)。`Table`支持持久化存储列宽信息，只需要通过`storeWidth`
+指定保存到`localStorage`中的`key`就可以了，这样下次渲染`Table`时会使用上次的列宽信息进行渲染
+
+> `storeWidth`必须在当前域名下唯一
 
 ```vdt
 import Table from 'kpc/components/table';
@@ -16,7 +19,11 @@ const {data} = self.get();
         scheme={{ {
             a: {
                 title: '通过minColWidth控制最小宽度100px',
-                width: '50%',
+                width: '50%'
+            },
+            none: {
+                title: '隐藏列',
+                className: 'hidden'
             },
             b: {
                 title: '单独设置最小宽度300px',
@@ -25,22 +32,24 @@ const {data} = self.get();
             },
             c: {
                 title: '标题',
-                width: '40%',
+                width: '40%'
             }
         } }} 
         data={{ data }}
         resizable
         minColWidth={{ 100 }}
+        type="grid"
+        storeWidth="resizableTable"
     />
-    <Form style="margin-top: 20px;">
+    <Form style="margin-top: 20px;" labelWidth="140">
         <FormItem style="width: 100%">
-            <b:label><div style="width: 140px">table in table-cell</div></b:label>
+            <b:label>table in table-cell</b:label>
             <Table 
                 fixHeader
                 scheme={{ {
                     a: {
                         title: '通过minColWidth控制最小宽度100px',
-                        width: '50%',
+                        width: '50%'
                     },
                     b: {
                         title: '单独设置最小宽度300px',
@@ -49,7 +58,7 @@ const {data} = self.get();
                     },
                     c: {
                         title: '标题',
-                        width: '40%',
+                        width: '40%'
                     }
                 } }} 
                 data={{ data }}
@@ -59,6 +68,11 @@ const {data} = self.get();
         </FormItem>
     </Form>
 </div>
+```
+
+```styl
+.hidden
+    display none
 ```
 
 ```js

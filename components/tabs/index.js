@@ -4,7 +4,7 @@ import template from './index.vdt';
 import '../../styles/kpc.styl';
 import './index.styl';
 import ResizeObserver from 'resize-observer-polyfill'; 
-import {nextFrame} from '../utils';
+import {nextFrame, findRouter} from '../utils';
 
 export default class Tabs extends Intact {
     @Intact.template()
@@ -18,6 +18,7 @@ export default class Tabs extends Intact {
             size: 'default',
             type: 'default',
             closable: false,
+            beforeChange: undefined,
 
             _activeBarStyle: undefined,
             _scroll: false,
@@ -33,13 +34,27 @@ export default class Tabs extends Intact {
         size: ['large', 'default', 'small', 'mini'],
         type: ['default', 'card', 'border-card', 'no-border-card'],
         closable: Boolean,
-    }
+        beforeChange: Function,
+    };
 
-    _changeTab(item) {
+    static events = {
+        remove: true,
+    };
+
+    async _changeTab(item) {
+        const {beforeChange} = this.get();
+        if (beforeChange) {
+            const ret = await beforeChange(item.value);
+            if (!ret) {
+                return;
+            }
+        }
         // if exits 'to', we don't change the value,
         // while let the page to change it by pass value prop
         if (!item.to) {
             this.set('value', item.value);
+        } else if (this.$router) {
+            this.$router.push(item.to);
         } else {
             window.location.href = item.to;
         }
@@ -63,6 +78,8 @@ export default class Tabs extends Intact {
             this._refreshScroll(); 
         });
         ro.observe(this.element);
+
+        this.$router = findRouter(this);
     }
 
     _refreshScroll() {
@@ -102,8 +119,6 @@ export default class Tabs extends Intact {
     }
 
     _setActiveBarStyle() {
-        if (this.get('type') !== 'default') return;
-
         const vertical = this.get('vertical');
         const activeTab = this.element.querySelector('.k-tab.k-active');
 

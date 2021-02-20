@@ -1,13 +1,15 @@
 import Intact from 'intact';
 import template from './row.vdt';
 import mediaQuery from './mediaQuery';
-import {isObject} from '../utils';
+import {isObject, hasWindow} from '../utils';
 import Col from './col';
 import {breakpoints} from './utils';
 import matchMedia from './mediaMatch';
+import '../../styles/kpc.styl';
+import './index.styl';
 
 let enquire;
-if (typeof window !== 'undefined') {
+if (hasWindow) {
     window.matchMedia = matchMedia();
     enquire = require('enquire.js');
 }
@@ -45,8 +47,9 @@ export default class Row extends Intact {
 
     _init() {
         this.useFlex = false;
-        ['justify', 'align', 'flex', 'children'].forEach(item => {
-            this.on(`$receive:${item}`, (c, v) => {
+        const needKeys = ['justify', 'align', 'flex', 'children'];
+        this.on(`$receive`, (c, keys) => {
+            if (needKeys.find(key => keys.indexOf(key) > -1)) {
                 const {flex, justify, align, children} = this.get();
                 this.useFlex = flex || justify || align;
 
@@ -76,7 +79,7 @@ export default class Row extends Intact {
                         }
                     }
                 }
-            });
+            }
         });
     }
 

@@ -10,7 +10,7 @@ export default class Button extends Intact {
 
     defaults() {
         return {
-            type: 'default', // primary | warning | danger
+            type: 'default', // primary | warning | danger | success | none | secondary | link
             size: 'default', // small | mini
             icon: false,
             circle: false,
@@ -23,6 +23,7 @@ export default class Button extends Intact {
             value: undefined,
             name: undefined,
             tabindex: '0',
+            ghost: false,
 
             _value: undefined,
             _checkType: 'none',
@@ -42,18 +43,18 @@ export default class Button extends Intact {
         tagProps: Object,
         name: String,
         tabindex: [String, Number],
+        ghost: Boolean,
+    }
+
+    static events = {
+        click: true,
+        mouseup: true,
     }
 
     _mount() {
-        let parentVNode = this.parentVNode;
+        this._findGroup();
 
-        while (parentVNode && parentVNode.tag !== Group) {
-            parentVNode = parentVNode.parentVNode;
-        }
-
-        if (parentVNode) {
-            this.group = parentVNode.children;
-
+        if (this.group) {
             this.set({
                 _checkType: this.group.get('checkType'),
                 _value: this.group.get('value')
@@ -62,12 +63,25 @@ export default class Button extends Intact {
     }
 
     _beforeUpdate() {
+        // we need recheck the group, #402
+        this._findGroup();
+
         if (this.group) {
             this.set({
                 _checkType: this.group.get('checkType'),
                 _value: this.group.get('value')
             }, {silent: true});
         } 
+    }
+
+    _findGroup() {
+        let parentVNode = this.parentVNode;
+
+        while (parentVNode && parentVNode.tag !== Group) {
+            parentVNode = parentVNode.parentVNode;
+        }
+
+        this.group = parentVNode ? parentVNode.children : null;
     }
 
     showLoading() {
@@ -116,9 +130,10 @@ export default class Button extends Intact {
         this.trigger('click', e);
     }
 
-    _blur() {
+    _onMouseUp(e) {
         // when click, blur it to remove the focus style
         this.element.blur();
+        this.trigger('mouseup', e);
     }
 }
 

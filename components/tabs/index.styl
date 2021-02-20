@@ -17,21 +17,21 @@ sizes = large small mini
         color $tabs-color 
         position relative
         vertical-align middle
-        // disabled
-        &.k-disabled
-            color $disabled-color
-            cursor not-allowed
         // close
         .k-close
-            margin-right unit(-($mini-height / 2 / 14), rem)
+            margin-right unit(-($mini-height / 2 / $rem), rem)
             margin-left -(@margin-right)
             position relative
-            top -2px
+            // top -2px
             .k-icon
                 font-size $tabs-close-font-size
         &:hover
         &.k-active
             color $tabs-active-color 
+        // disabled
+        &.k-disabled
+            color $disabled-color
+            cursor not-allowed
             
     // active-bar
     .k-active-bar
@@ -60,88 +60,95 @@ sizes = large small mini
             height auto
 
     // card
-    &.k-card
+    &.k-tabs-card
         .k-tab
             margin 0
-            border $tabs-border-width solid #fff
-            border-width $tabs-border-width $tabs-border-width 0 $tabs-border-width
-            margin-left -($tabs-border-width)
-            &:first-of-type
-                margin-left 0
-            &.k-active
-                border-color $tabs-border-color 
-                z-index 1
-                &:after
-                &:before
-                    content ""
-                    display block
-                    position absolute
-                &:after
-                    height $tabs-border-width
-                    background #fff
-                    bottom -($tabs-border-width)
-                    left 0
-                    width 100%
-                &:before
-                    height $tabs-highlight-height
-                    background $primary-color
-                    top -($tabs-border-width)
-                    left -($tabs-border-width)
-                    right -($tabs-border-width)
+        // active-bar
+        .k-active-bar
+            background #fff
+            top 0
+            height auto
+            z-index -1
+            border-left $tabs-border-width solid $tabs-border-color
+            border-right @border-left
+            &:before
+                content ''
+                display block
+                position absolute
+                height $tabs-highlight-height
+                background $primary-color
+                top 0
+                left -($tabs-border-width)
+                right -($tabs-border-width)
+
         // vertical card
         &.k-vertical
-            .k-tab
-                border-width $tabs-border-width 0 $tabs-border-width $tabs-border-width
-                margin-top -($tabs-border-width)
-                &:first-of-type
-                    margin-top 0
-                &.k-active
-                    &:after
-                        left auto
-                        right -($tabs-border-width)
-                        width $tabs-border-width
-                        top 0
-                        bottom 0
-                        height auto
-                    &:before
-                        height auto
-                        top -($tabs-border-width)
-                        bottom -($tabs-border-width)
-                        left -($tabs-border-width)
-                        right auto
-                        width $tabs-highlight-height
+            .k-active-bar
+                left 0
+                width auto
+                border-left none
+                border-right none
+                border-top $tabs-border-width solid $tabs-border-color
+                border-bottom @border-top
+                &:before
+                    width $tabs-highlight-height
+                    left 0
+                    right auto
+                    bottom 0
+                    height auto
 
     // border-card
-    &.k-border-card
+    &.k-tabs-border-card
         border $tabs-border
         border-bottom none
         background $tabs-border-card-bg-color
         .k-tab
             margin 0
-            &.k-active
-                background #fff
+        // active-bar
+        .k-active-bar
+            background #fff
+            top 0
+            height auto
+            z-index -1
+
         // vertical border-card
         &.k-vertical
             border-right none
             border-bottom $tabs-border
+            .k-active-bar
+                width auto
+                left 0
+                bottom 0
+                right 0
 
     // no-border-card
-    &.k-no-border-card
+    &.k-tabs-no-border-card
         border-bottom none
         .k-tab
-            border-color transparent
-            background $tabs-no-border-card-bg-color 
-            margin-right $tabs-no-border-card-gutter 
-            &.k-active
-                background #fff
-                border-color transparent 
-                &:after
-                    display none
+            margin-right $tabs-no-border-card-gutter
+            &:before
+                content ''
+                display block
+                position absolute
+                background $tabs-no-border-card-bg-color 
+                top 0
+                bottom 0
+                left 0
+                right 0
+                z-index -1
+        // active-bar
+        .k-active-bar
+            border none
+            &:before
+                left 0
+                right 0
         // vertical
         &.k-vertical
             border-right none
             .k-tab
                 margin-top $tabs-no-border-card-gutter
+            .k-active-bar
+                border none
 
     // scroll
     &:not(.k-vertical)
@@ -151,8 +158,8 @@ sizes = large small mini
             // @referece https://stackoverflow.com/questions/6421966/css-overflow-x-visible-and-overflow-y-hidden-causing-scrollbar-issue
             padding-bottom 1px
             margin-bottom -1px
-        &.k-border-card
-        &.k-no-border-card
+        &.k-tabs-border-card
+        &.k-tabs-no-border-card
             .k-scroll
                 padding-bottom 0
                 margin-bottom 0
@@ -186,4 +193,4 @@ sizes = large small mini
                             font-size lookup('$tabs-' + size + '-close-font-size')
 
 
-require($theme-dir + '/tabs.styl')
+requireTheme('tabs')

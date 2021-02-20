@@ -3,10 +3,13 @@ import template from './index.vdt';
 import '../../styles/kpc.styl';
 import './index.styl';
 import {selectInput} from '../utils';
+import Search from './search';
 
 export default class Input extends Intact {
-    @Intact.template
+    @Intact.template()
     static template = template;
+
+    static blocks = ['prepend', 'append', 'prefix', 'suffix'];
 
     static propTypes = {
         type: String,
@@ -25,6 +28,9 @@ export default class Input extends Intact {
         width: [Number, String],
         tabindex: [Number, String],
         autocomplete: String,
+        nativeProps: Object,
+        stackClearIcon: Boolean,
+        frozenOnInput: Boolean,
     };
 
     defaults() {
@@ -45,6 +51,13 @@ export default class Input extends Intact {
             width: undefined,
             tabindex: undefined,
             autocomplete: undefined,
+            nativeProps: undefined,
+            stackClearIcon: false,
+            frozenOnInput: false,
+
+            _width: 1,
+            _inputing: false,
+            _originalValue: '',
         }
     }
 
@@ -61,7 +74,7 @@ export default class Input extends Intact {
     _adjustWidth() {
         if (this.get('autoWidth')) {
             const width = this.refs.fake.offsetWidth || 1;
-            this.refs.input.style.width = `${width + 1}px`;
+            this.set('_width', width);
         }
     }
 
@@ -78,13 +91,26 @@ export default class Input extends Intact {
     focus() {
         this.refs.input.focus();
     }
-    
+
     blur() {
         this.refs.input.blur();
     }
 
+    _startInput(e) {
+        this.set({_inputing: true, _originalValue: e.target.value});
+        this.trigger('focus', e);
+    }
+
+    _endInput(e) {
+        // ignore dispatch event, #523
+        if (e._dispatch) return;
+        this.set({_inputing: false});
+        this.trigger('blur', e);
+    }
+
     _onInput(e) {
-        this.set('value', e.target.value);
+        const value = e.target.value;
+        this.set({value, _originalValue: value});
         this.trigger('input', e);
     }
 
@@ -92,11 +118,10 @@ export default class Input extends Intact {
         this.trigger(name, e);
     }
 
-    _destroy() {
-        if (this.get('autoWidth')) {
-            this.input.style.width = '';
-        }
+    _onChange(e) {
+        if (this.get('frozenOnInput')) this.update();
+        this.trigger('change', e);
     }
 }
 
-export {Input};
+export {Input, Search};

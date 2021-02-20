@@ -1,6 +1,6 @@
 ---
 title: 加载状态 
-order: 13 
+order: 21
 ---
 
 给`Table`添加`loading`属性，即可展示加载状态
@@ -12,9 +12,9 @@ import {Switch} from 'kpc/components/switch';
 <div>
     <Table 
         data={{ [
-            {a: '第一行', b: '哈哈2'}, 
+            {a: '第一行', b: '哈哈1'}, 
             {a: '第二行', b: '哈哈2'},
-            {a: '第三行', b: '哈哈3'},
+            {a: '第三行', b: '哈哈3'}
         ] }}
         loading={{ !!self.get('loading') }}
     >

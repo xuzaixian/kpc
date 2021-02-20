@@ -1,11 +1,13 @@
 import TimePanel from './panel';
-import {_$} from '../utils';
+import {_$, getRestProps} from '../utils';
 import {Select, Option} from '../select';
+import Icon from '../icon';
 
 const {
     range, multiple, _options, size,
     clearable, placeholder, disabled,
-    className, style, container,
+    className, container, _value,
+    maxDate, minDate
 } = self.get(); 
 
 const _placeholder = range ?
@@ -20,32 +22,39 @@ const _placeholder = range ?
             "k-time-picker": true,
         } }}
         Panel={{ TimePanel }}
+        showFooter
     >
-        <b:prefix><i class="ion-ios-clock-outline"></i></b:prefix>
+        <b:suffix><Icon class="k-icon-time" /></b:suffix>
         <b:singe-panel>
             <TimePanel
-                v-model="_value"
+                value={{ _value }}
+                ev-$change:value={{ self._onChangeValue }}
                 ev-hide={{ self._hide }}
                 ref="begin"
                 multiple={{ multiple }}
-                max={{ self.get('max') }}
-                min={{ self.get('min') }}
+                maxDate={{ maxDate }}
+                minDate={{ minDate }}
+                ev-wheel={{ self._onWheel }}
             />
         </b:singe-panel>
     </t:parent>
     <Select v-else
         v-model="value" 
+        {{ ...getRestProps(self) }}
         multiple={{ multiple }}
         placeholder={{ placeholder || _placeholder }}
         hideIcon
         clearable={{ clearable }}
         disabled={{ disabled }}
         size={{ size }}
-        class={{ className }}
-        style={{ style }}
+        filterable
+        class={{ {
+            'k-datepicker': true,
+            [className]: className
+        } }}
         container={{ container }}
+        data={{ _options }}
     >
-        <Option v-for={{ _options }} value={{ value }}>{{ value }}</Option>
-        <b:prefix><i class="ion-ios-clock-outline"></i></b:prefix>
+        <b:suffix><Icon class="k-icon-time" /></b:suffix>
     </Select>
 </template>

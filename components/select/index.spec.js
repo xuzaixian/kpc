@@ -1,9 +1,14 @@
 import BasicDemo from '~/components/select/demos/basic';
-import DisabledDemo from '~/components/select/demos/disabled'; 
+import DisabledDemo from '~/components/select/demos/disabled';
 import ClearableDemo from '~/components/select/demos/clearable';
 import FilterDemo from '~/components/select/demos/filterable';
 import GroupDemo from '~/components/select/demos/group';
-import {mount, unmount, dispatchEvent, getElement} from 'test/utils';
+import AllowUnmatchDemo from '~/components/select/demos/allowUnmatch';
+import {mount, unmount, dispatchEvent, getElement, wait} from 'test/utils';
+import Tooltip from 'kpc/components/tooltip';
+import Intact from 'intact';
+import {Select, Option} from 'kpc/components/select';
+import SearchableDemo from '~/components/select/demos/searchable';
 
 describe('Select', () => {
     let instance;
@@ -15,7 +20,7 @@ describe('Select', () => {
 
     it('should select value correctly', () => {
         instance = mount(BasicDemo);
-        
+
         const trigger = instance.element.querySelector('.k-wrapper');
         trigger.click();
         expect(instance.element.outerHTML).to.matchSnapshot();
@@ -38,6 +43,10 @@ describe('Select', () => {
         trigger.click();
         const dropdown = getElement('.k-select-dropdown');
         expect(dropdown.innerHTML).to.matchSnapshot();
+
+        const close = instance.element.querySelector('.k-close');
+        close.click();
+        expect(instance.get('days').length).to.eql(2);
     });
 
     it('clearable', () => {
@@ -49,7 +58,39 @@ describe('Select', () => {
         clear1.click();
         clear2.click();
         expect(instance.get('day')).to.eql('');
-        expect(instance.get('days')).to.eql('');
+        expect(instance.get('days')).to.eql([]);
+        unmount(instance);
+        // clearable shouldn't support when disabled is true
+        class Demo extends Intact {
+            @Intact.template()
+            static template = `
+                <Select v-model="days" multiple disabled clearable>
+                    <Option value="Monday">星期</Option>
+                    <Option value="Tuesday">星期二</Option>
+                    <Option value="Wednesday">星期三</Option>
+                    <Option value="Thursday">星期四</Option>
+                    <Option value="Friday">星期五</Option>
+                    <Option value="Saturday">星期六</Option>
+                    <Option value="Sunday">星期天</Option>
+                </Select>
+            `;
+            defaults() {
+                return {
+                    days:['Monday', 'Tuesday']
+                }
+            }
+            _init() {
+                this.Select = Select;
+                this.Option = Option;
+            }
+        }
+
+        instance = mount(Demo);
+
+        const clear = instance.element.querySelector('.k-clear');
+        clear.click();
+        expect(instance.get('days')).to.eql(['Monday', 'Tuesday']);
+
     });
 
     it('multiple', () => {
@@ -71,7 +112,7 @@ describe('Select', () => {
 
     it('filterable', () => {
         instance = mount(FilterDemo);
-    
+
         const [input1, input2, input3] = instance.element.querySelectorAll('.k-inner');
         input1.value = 'm';
         dispatchEvent(input1, 'input');
@@ -115,7 +156,7 @@ describe('Select', () => {
         expect(dropdown2.innerHTML).to.matchSnapshot();
     });
 
-    it('keyboard operations',(done) => {
+    it('keyboard operations', async () => {
         instance = mount(BasicDemo);
 
         const select = instance.element.querySelector('.k-select');
@@ -124,9 +165,219 @@ describe('Select', () => {
         expect(dropdown.innerHTML).to.matchSnapshot();
 
         dispatchEvent(select, 'keydown', {keyCode: 9});
-        setTimeout(() => {
-            expect(dropdown.parentNode).to.eql(null);
-            done();
-        }, 500);
+        await wait(500);
+        expect(dropdown.style.display).to.eql('none');
+    });
+
+    it('no data', async () => {
+        instance = mount(AllowUnmatchDemo);
+
+        const input = instance.element.querySelector('.k-inner');
+        input.value = 'xxx';
+        dispatchEvent(input, 'input');
+        const dropdown = getElement('.k-select-dropdown');
+        expect(dropdown.innerHTML).to.matchSnapshot();
+    });
+
+    it('Tooltip with Select', async () => {
+        class Demo extends Intact {
+            @Intact.template()
+            static template = `<div><Tooltip content="hello">
+                <Select><Option value="1">option 1</Option></Select>
+            </Tooltip></div>`
+            _init() {
+                this.Tooltip = Tooltip;
+                this.Select = Select;
+                this.Option = Option;
+            }
+        }
+
+        instance = mount(Demo);
+        const wrapper = instance.element.querySelector('.k-wrapper');
+        wrapper.click();
+        wrapper.click();
+
+        expect(getElement('.k-select-dropdown')).to.be.undefined;
+        expect(getElement('.k-tooltip-content')).to.be.undefined;
+    });
+
+    it('Searchable with multiple', async () => {
+        instance = mount(SearchableDemo);
+
+        const [, select] = instance.element.querySelectorAll('.k-wrapper');
+        select.click();
+        const dropdown = getElement('.k-select-dropdown');
+        const [selectAll, toggleSelect, unselectAll] = dropdown.querySelectorAll('.k-select-op .k-btn');
+        const [confirm, cancel] = dropdown.querySelectorAll('.k-select-footer .k-btn');
+
+        // select all
+        selectAll.click();
+        confirm.click();
+        expect(instance.get('days')).have.length(7);
+
+        // unselect all
+        select.click();
+        unselectAll.click();
+        confirm.click();
+        expect(instance.get('days')).have.length(0);
+
+        // toggle select
+        select.click();
+        instance.set('days', ['Monday', 'Tuesday']);
+        const input = dropdown.querySelector('.k-inner');
+        input.value = 's'
+        dispatchEvent(input, 'input');
+        toggleSelect.click();
+        confirm.click();
+        expect(instance.get('days')).have.length(5);
+        expect(instance.get('days')).include('Monday')
+    });
+
+    it('should trigger change event correctly', () => {
+        const spy = sinon.spy();
+
+        class Demo extends Intact {
+            @Intact.template()
+            static template = `
+                <div>
+                    <Select v-model="basic" ev-change={{ self._onChange }}>
+                        <Option value="white">白色</Option>
+                        <Option value="black">黑色</Option>
+                    </Select>
+                    <Select v-model="clearAndmultiple" clearable multiple ev-change={{ self._onChange }}>
+                        <Option value="white">白色</Option>
+                        <Option value="black">黑色</Option>
+                    </Select>
+                    <Select v-model="multipleAndsearchable" multiple searchable ev-change={{ self._onChange }}>
+                        <Option value="white">白色</Option>
+                        <Option value="black">黑色</Option>
+                    </Select>
+                    <Select v-model="filterable" filterable ev-change={{ self._onChange }}>
+                        <Option value="white">白色</Option>
+                        <Option value="black">黑色</Option>
+                    </Select>
+                    <Select v-model="allowUnmatch" allowUnmatch filterable ev-change={{ self._onChange }}>
+                        <Option value="white">白色</Option>
+                        <Option value="black">黑色</Option>
+                    </Select>
+                </div>
+            `;
+            _init() {
+                this.Select = Select;
+                this.Option = Option
+            }
+            _onChange(v) {
+                spy(v);
+            }
+        }
+
+        instance = mount(Demo);
+
+        const [
+            basicTrigger, clearAndmultipleTrigger, multipleAndsearchableTrigger,
+            filterableTrigger, allowUnmatchTrigger
+        ] = instance.element.querySelectorAll('.k-wrapper');
+
+        // basic
+        basicTrigger.click();
+        const dropdown = getElement('.k-select-dropdown');
+        const item = dropdown.querySelector('.k-item');
+        item.click();
+        expect(spy.callCount).to.eql(1);
+        expect(spy.calledWith(instance.get('basic'))).to.eql(true);
+
+        //multiple
+        clearAndmultipleTrigger.click();
+        const dropdown1 = getElement('.k-select-dropdown');
+        const [item1, item2] = dropdown1.querySelectorAll('.k-item');
+        item1.click();
+        item2.click();
+        // The change method is not trigger while the operation not completed.
+        expect(spy.callCount).to.eql(1);
+        clearAndmultipleTrigger.click();
+        expect(spy.callCount).to.eql(2);
+        expect(spy.calledWith(instance.get('clearAndmultiple'))).to.eql(true);
+
+        //clear
+        const clearBtn = instance.element.querySelector('.k-clear');
+        clearBtn.click();
+        expect(spy.callCount).to.eql(3);
+        expect(spy.calledWith([])).to.eql(true);
+
+        // search
+        multipleAndsearchableTrigger.click();
+        const dropdown2 = getElement('.k-select-dropdown');
+        const selectAll = dropdown2.querySelector('.k-select-op .k-btn');
+        selectAll.click();
+        multipleAndsearchableTrigger.click();
+        // The change method is not trigger while the operation not completed.
+        expect(spy.callCount).to.eql(3);
+        multipleAndsearchableTrigger.click();
+        const dropdown3 = getElement('.k-select-dropdown');
+        const selectAll1 = dropdown3.querySelector('.k-select-op .k-btn');
+        const confirm = dropdown3.querySelector('.k-select-footer .k-btn');
+        selectAll1.click();
+        confirm.click();
+        expect(spy.callCount).to.eql(4);
+        expect(spy.calledWith(instance.get('multipleAndsearchable'))).to.eql(true);
+        // filterable
+        const input= instance.element.querySelector('.k-inner');
+        input.value = 'white';
+        dispatchEvent(input, 'input');
+        dispatchEvent(document, 'keydown', {keyCode: 13});
+        expect(spy.callCount).to.eql(5);
+        expect(spy.calledWith(instance.get('filterable'))).to.eql(true);
+        // The change method is not trigger while the input value that don't match.
+        const input1= instance.element.querySelector('.k-inner');
+        input1.value = 'red';
+        dispatchEvent(input, 'input');
+        filterableTrigger.click();
+        expect(spy.callCount).to.eql(5);
+
+        //allowUnmatch
+        const [, input2] = instance.element.querySelectorAll('.k-inner');
+        input2.value = 'xxx';
+        dispatchEvent(input2, 'input');
+        allowUnmatchTrigger.click();
+        expect(spy.callCount).to.eql(6);
+        expect(spy.calledWith('xxx')).to.eql(true);
+    });
+
+    it('should not set value to null when loading', () => {
+        class Demo extends Intact {
+            @Intact.template()
+            static template = `
+                <Select v-model="day" loading={{ self.get('isLoad') }}>
+                    <Option v-for={{ self.get('data') }} value={{ value.value }}> 
+                        {{ value.label }} 
+                    </Option>
+                </Select>
+            `;
+            defaults() {
+                return {
+                    isLoad: false,
+                    day: 'Monday',
+                    data: [
+                        {label: '星期一', value: 'Monday'},
+                        {label: '星期二', value: 'Tuesday'},
+                        {label: '星期三', value: 'Wednesday'},
+                        {label: '星期四', value: 'Thursday'},
+                        {label: '星期五', value: 'Friday'},
+                        {label: '星期六', value: 'Saturday'},
+                        {label: '星期天', value: 'Sunday'},
+                    ]
+                }
+            }
+            _init() {
+                this.Select = Select;
+                this.Option = Option;
+            }
+        }
+
+        instance = mount(Demo);
+        
+        instance.set({isLoad: true});
+        instance.set({data: []});
+        expect(instance.get('day')).to.eql('Monday');
     });
 });

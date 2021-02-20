@@ -1,7 +1,11 @@
+import {getRestProps} from '../utils';
+import Tooltip from '../tooltip';
+import Icon from '../icon';
+
 const {
-    className, children, label, style, 
+    className, children, label,
     isValid, isDirty, hideLabel, htmlFor,
-    errorClassName,
+    errorClassName, rules, fluid, _ellipsis,
 } = self.get();
 
 const classNameObj = {
@@ -9,6 +13,7 @@ const classNameObj = {
     'k-invalid': isDirty && isValid === false,
     'k-valid': isDirty && isValid === true,
     [className]: className,
+    'k-fluid': fluid,
 };
 
 const labelWidth = self.form && self.form.get('labelWidth');
@@ -21,21 +26,40 @@ if (labelWidth != null) {
     }
 }
 
-<div class={{ classNameObj }} style={{ style }}
-    ev-change={{ self._dirty }}
-    ev-focusout={{ self._dirty }}
+const starOnRequired = self.form && self.form.get('starOnRequired');
+
+<div {{ ...getRestProps(self) }} class={{ classNameObj }}
+    ev-change={{ self._onChange }}
+    ev-focusout={{ self._onFocusout }}
 >
     <label for={{ htmlFor }} class="k-label" v-if={{ !hideLabel }}
         style={{ labelStyle }}
     >
+        <span class="k-star" v-if={{ starOnRequired && rules && rules.required }}>*</span>
         <b:label>{{ label }}</b:label>
     </label>
     <div class="k-content">
         <b:content>{{ children }}</b:content>
-        <Animate v-if={{ self.get('isValid') === false }}
-            class={{ {"k-error": true, [errorClassName]: errorClassName} }}
+        <Animate 
+            key="form-item-animate"
+            v-if={{ self.get('isValid') === false }}
+            class={{ {
+                "k-error": true,
+                [errorClassName]: errorClassName,
+                'k-ellipsis': _ellipsis
+            } }}
             a:transition="c-fade"
-        >{{ self.get('message') }}</Animate>
+        >
+            <div class="k-error-message c-ellipsis" ref="error">
+                {{ self.get('message') }}
+            </div>
+            <Tooltip canHover position="bottom">
+                <Icon class="ion-ios-information-outline k-error-more" size="small" />
+                <b:content>
+                    {{ self.get('message') }}
+                </b:content>
+            </Tooltip>
+        </Animate>
     </div>
     <div class="k-append" v-if={{ blocks.append }}>
         <b:append /> 

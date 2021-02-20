@@ -1,6 +1,8 @@
 import Intact from 'intact';
 import template from './formItem.vdt';
 import Form from './form';
+import '../../styles/kpc.styl';
+import './index.styl';
 
 const warn = Intact.utils.warn;
 
@@ -8,19 +10,27 @@ export default class FormItem extends Intact {
     @Intact.template()
     get template() { return template; }
 
+    static blocks = ['label', 'content', 'append'];
+
     static propTypes = {
         model: String,
         rules: Object,
         // isValid: Boolean,
         isDirty: Boolean,
-        // message: String, 
+        // message: String,
         messages: Object,
         classNames: Object,
         label: String,
         htmlFor: String,
         hideLabel: Boolean,
         force: Boolean,
-    }
+        fluid: Boolean,
+    };
+
+    static events = {
+        change: true,
+        focusout: true,
+    };
 
     defaults() {
         return {
@@ -37,6 +47,9 @@ export default class FormItem extends Intact {
             htmlFor: undefined,
             hideLabel: false,
             force: false,
+            fluid: false,
+
+            _ellipsis: false,
         }
     }
 
@@ -44,6 +57,7 @@ export default class FormItem extends Intact {
         this.initValue = this.get('value');
         this.on('$change:value', this.validateIfDirty);
         this.on('$change:rules', this.validateIfDirty);
+        this.on('$changed:message', this._checkEllipsis);
     }
 
     _beforeCreate() {
@@ -69,9 +83,9 @@ export default class FormItem extends Intact {
 
         return Object.assign({}, formRules, selfRules);
     }
-    
+
     getMessage(name) {
-        const defaultMessages = Form.messages; 
+        const defaultMessages = Form.messages;
         const customMessages = this.get('messages');
         const message = customMessages[name] || defaultMessages[name];
 
@@ -98,7 +112,7 @@ export default class FormItem extends Intact {
 
     validate() {
         if (!this.get('model') || !this.form) return;
-        
+
         this._cancel();
 
         const rules = this.getRules();
@@ -140,7 +154,7 @@ export default class FormItem extends Intact {
                         return [false, values[index] || this.getMessage(keys[index]), this.getClassName(keys[index])];
                     }
                 }
-                return [true, '', null];
+                return [true, this.get('message'), null];
             }, err => {
                 let message;
                 let className;
@@ -153,7 +167,8 @@ export default class FormItem extends Intact {
                 return [false, message, className];
             })
             .then(([isValid, message, className]) => {
-                if (p.cancelled) return;
+                // if cancelled, should return the last result
+                if (p.cancelled) return this.get('isValid');
                 this.set({
                     isDirty: true,
                     isValid: isValid,
@@ -181,15 +196,16 @@ export default class FormItem extends Intact {
             this.validate();
         }
     }
-    
+
     reset() {
         this._cancel();
 
         this.set({
             isDirty: false,
             isValid: undefined,
+            message: '',
             value: Array.isArray(this.get('value')) ?
-                [].concat(this.initValue) : 
+                [].concat(this.initValue) :
                 this.initValue,
         });
     }
@@ -200,10 +216,21 @@ export default class FormItem extends Intact {
         if (this.get('isDirty')) return;
 
         // for select, the focusout event triggers before select
-        // so we put off validating it 
+        // so we put off validating it
         setTimeout(() => {
+            if (this.destroyed) return;
             this.validate()
         }, 100);
+    }
+
+    _onChange(e) {
+        this.trigger('change', e);
+        this._dirty();
+    }
+
+    _onFocusout(e) {
+        this.trigger('focusout', e);
+        this._dirty();
     }
 
     _cancel() {
@@ -211,6 +238,12 @@ export default class FormItem extends Intact {
         if (this.promise) {
             this.promise.cancelled = true;
         }
+    }
+
+    _checkEllipsis() {
+        const error = this.refs.error;
+        if (!error) return;
+        this.set('_ellipsis', error.offsetWidth < error.scrollWidth);
     }
 
     _destroy() {

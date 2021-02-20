@@ -1,11 +1,13 @@
 import Intact from 'intact';
 import template from './form.vdt';
 import {methods, messages, classNames, addMethod} from './methods';
+import '../../styles/kpc.styl';
+import './index.styl';
 
 export default class Form extends Intact {
-    static methods = methods; 
+    static methods = methods;
 
-    static messages = messages; 
+    static messages = messages;
 
     static classNames = classNames;
 
@@ -18,6 +20,13 @@ export default class Form extends Intact {
         items: Array,
         rules: Object,
         labelWidth: [String, Number],
+        layout: ['horizontal', 'vertical', 'inline'],
+        starOnRequired: Boolean,
+        size: ['default', 'small', 'mini'],
+    };
+
+    static events = {
+        submit: true,
     };
 
     defaults() {
@@ -25,6 +34,9 @@ export default class Form extends Intact {
             items: [],
             rules: {},
             labelWidth: undefined,
+            layout: 'horizontal',
+            starOnRequired: false,
+            size: 'default',
         }
     }
 

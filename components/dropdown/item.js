@@ -68,14 +68,14 @@ export default class DropdownItem extends Intact {
         // if (this.get('disabled')) return;
     }
 
-    select(e) {
+    select(e, isFocus) {
         // is not a sub dropdown trigger
         const dropdown = this._isSubMenu();
         this.trigger('click', e);
         if (!dropdown) {
-            this.trigger('select', this);
+            this.trigger('select', this, e);
         } else {
-            dropdown.show();
+            dropdown.show(null, null, isFocus);
         }
     }
 
@@ -83,11 +83,12 @@ export default class DropdownItem extends Intact {
         this.set('_isFocus', true);
 
         const elRect = this.element.getBoundingClientRect();
-        const pEl = this.parent.refs.menu.element;
+        const menuEl = this.parent.refs.menu.element;
+        const pEl = getScrollParent(this.element.parentNode, menuEl);
         const pElRect = pEl.getBoundingClientRect();
         const bottomOverflowDistance = elRect.bottom - pElRect.bottom;
         const topOverflowDistance = elRect.top - pElRect.top;
-        
+
         if (bottomOverflowDistance > 0) {
             pEl.scrollTop += bottomOverflowDistance;
         } else if (topOverflowDistance < 0) {
@@ -104,10 +105,10 @@ export default class DropdownItem extends Intact {
         // }
     }
 
-    showMenuAndFocus() {
+    showMenuAndFocus(e) {
         const dropdown = this._isSubMenu();
         if (dropdown) {
-            dropdown.show(null, null, true);
+            this.select(e, true);
         }
     }
 
@@ -134,4 +135,9 @@ export default class DropdownItem extends Intact {
             items.splice(items.indexOf(this), 1);
         }
     }
+}
+
+function getScrollParent(node, breakEl) {
+    if (node === breakEl || node.scrollHeight > node.clientHeight) return node;
+    return getScrollParent(node.parentNode, breakEl);
 }

@@ -1,6 +1,6 @@
 ---
 title: 行展开
-order: 6
+order: 8
 ---
 
 通过`expand`block指定行展开后的模板内容。是否支持点击该行任何区域都展开内容，
@@ -20,7 +20,8 @@ import {Table, TableColumn} from 'kpc/components/table';
         checkType="none"
         ref="__test1"
     >
-        <b:expand params="data, index"> <div>Email: {{ data.email }}</div>
+        <b:expand params="data, index">
+            <div>Email: {{ data.email }}</div>
         </b:expand>
         <TableColumn title="点击整行展开内容" key="name" />
     </Table>
@@ -35,14 +36,14 @@ import {Table, TableColumn} from 'kpc/components/table';
         <b:expand params="data, index">
             <div>Email: {{ data.email }}</div>
         </b:expand>
-        <TableColumn title="点击+，展开内容" key="name"> 
+        <TableColumn title="点击+，展开内容" key="name">
             <b:template params="data, index">
                 <div>
                     <i 
                         class={{ {
                             'icon': true,
                             'ion-ios-plus-outline': self.get('expandedKeys').indexOf(index) < 0,
-                            'ion-ios-minus-outline': self.get('expandedKeys').indexOf(index) > -1,
+                            'ion-ios-minus-outline': self.get('expandedKeys').indexOf(index) > -1
                         } }}
                         ev-click={{ self.toggleExpand.bind(self, data, index) }}
                     ></i>
@@ -59,7 +60,6 @@ import {Table, TableColumn} from 'kpc/components/table';
     display: flex
     .k-table
         flex 1
-    .k-table-wrapper
         margin-left: 10px
 .icon
     vertical-align middle

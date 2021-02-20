@@ -5,17 +5,19 @@
     display inline-block
     outline none
     width $datepicker-width
-    .k-input
-        width 100%
     .k-inner
         cursor pointer
-    &:focus
+    &:not(.k-disabled):focus
     &.k-show
         .k-inner
             border $input-focus-border
     // range
     &.k-range
         width $datepicker-range-width 
+    &:not(.k-disabled)
+        .k-suffix
+            .k-icon
+                color $datepicker-icon-color 
 
 .k-datepicker-content
     color $datepicker-color
@@ -30,11 +32,15 @@
     .k-weekday
         display inline-block
         height $datepicker-day-width 
-        width $datepicker-day-width 
         border 1px solid transparent
         line-height s('calc(%s - 2px)', $datepicker-day-width)
         text-align center
+    .k-day
+        width $datepicker-day-width 
         margin $datepicker-day-margin 
+    .k-weekday
+        width $datepicker-weekday-width
+        margin $datepicker-weekday-margin 
     .k-day
         border-radius 50%
         cursor pointer
@@ -56,8 +62,7 @@
         &.k-disabled
             color $datepicker-day-disabled-color 
             cursor not-allowed
-            &:hover
-                background $datepicker-day-disabled-hover-bg-color 
+            background $datepicker-day-disabled-hover-bg-color 
     .k-weekdays
         border-bottom $datepicker-inner-border 
     if $datepicker-weekday-color != inherit
@@ -70,8 +75,8 @@
         .k-text
             margin $datepicker-month-text-margin 
             line-height $datepicker-month-text-line-height 
-        .k-icon
-            font-size $datepicker-month-icon-font-size
+        // .k-icon
+            // font-size $datepicker-month-icon-font-size
         .k-prev
         .k-left-btns
             float left
@@ -82,6 +87,12 @@
             font-size 14px
             cursor pointer
             overflow hidden
+            position relative
+            .k-icon
+                position absolute
+                margin-left -1rem
+                top 50%
+                transform translateY(-50%)
 
     .k-scroll-select
         height $datepicker-scroll-select-height
@@ -137,6 +148,8 @@
         left 0
         width 100%
         border none
+        .k-wrapper
+            float none
         .k-tab
             width 50%
     .k-datetime
@@ -146,7 +159,15 @@
     .k-range
         .k-datetime:nth-child(2)
             border-left $datepicker-inner-border
+    .k-time-picker
+        .k-scroll-select
+            height $datepicker-time-scroll-select-height
+
+    // footer
+    .k-footer
+        border-top 1px solid #e5e5e5
+        padding 8px 16px
+        text-align right
 
 
-
-require($theme-dir + '/datepicker.styl')
+requireTheme('datepicker')

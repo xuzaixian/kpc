@@ -1,7 +1,7 @@
-const {addStyle} = require('../utils');
+import {addStyle, getRestProps} from '../utils';
 
 let {
-    className, style, children,
+    className, style,
     name, on, off, value,
     trueValue, falseValue, width,
     height, size, disabled, _dragging
@@ -52,8 +52,9 @@ if (width || height) {
 }
 
 <div class={{ classNameObj }} 
+    {{ ...getRestProps(self) }}
     style={{ style }} 
-    ev-click={{ self._toggle }}
+    ev-click={{ self._onClick }}
     tabindex={{ disabled ? "-1" : "0" }}
     ev-keypress={{ self._onKeypress }}
 >

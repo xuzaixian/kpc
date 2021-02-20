@@ -9,7 +9,7 @@ order: 4.1
 ```vdt
 import {Select, Option} from 'kpc/components/select';
 
-<Select filterable filter={{ () => true }} ev-$change:keywords={{ self.search }}>
+<Select multiple filterable filter={{ () => true }} ev-$change:keywords={{ self.search }}>
     <Option v-for={{ self.get('users') }} 
         value={{ value.login.username }}
     >{{ value.name.first }} {{ value.name.last }}</Option>
@@ -51,4 +51,18 @@ export default class extends Intact {
 beforeCreate() {
     this.lastFetchId = 0;
 },
+```
+
+```react-methods
+constructor(props) {
+    super(props);
+    this.state = {users: []};
+    this.search = this.search.bind(this);
+    this.lastFetchId = 0;
+}
+```
+
+```angular-properties
+private users = [];
+private lastFetchId = 0;
 ```

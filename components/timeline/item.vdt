@@ -1,4 +1,6 @@
-const {className, style, children, type, size} = self.get();
+import {getRestProps} from '../utils';
+
+const {className, children, type, size} = self.get();
 
 const classNameObj = {
     'k-item': true,
@@ -7,7 +9,7 @@ const classNameObj = {
     [`k-${size}`]: size !== 'default',
 };
 
-<div class={{ classNameObj }} style={{ style }}>
+<div class={{ classNameObj }} {{ ...getRestProps(self) }}>
     <div class="k-indicator">
         <div class="k-dot">
             <b:dot>

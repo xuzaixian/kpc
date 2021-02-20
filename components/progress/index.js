@@ -9,7 +9,7 @@ import './index.styl';
 function fixPercent(percent) {
     if (percent > 100) percent = 100;
     if (percent < 0) percent = 0;
-    return percent;
+    return +percent;
 }
 
 export default class Progress extends Intact{
@@ -21,7 +21,7 @@ export default class Progress extends Intact{
         size: ['default', 'small', 'mini'],
         isOuterText: Boolean,
         isInnerText: Boolean,
-        status: ['active', 'success', 'error', 'normal'],
+        status: ['active', 'success', 'error', 'normal', 'warning'],
         strokeWidth: Number,
     }
 
@@ -32,31 +32,25 @@ export default class Progress extends Intact{
             size: 'default', // small mini
             isOuterText: true,
             isInnerText: false,
-            status: 'active', // success | error | active | normal
-            strokeWidth: 4, 
+            status: 'active',
+            strokeWidth: 4,
+
+            _status: 'active',
         };
     }
 
     _init() {
-        this._initStatus = this.get('status');
-
-        this.on('$change:percent', (c, percent) => {
-            percent = fixPercent(percent);
-            const status = percent === 100 ? 'success' : this._initStatus;
-            this.set({
-                status: status,
-                percent: percent,
-            });
-        });
-        this.on('$change:status', (c, status) => {
-            if (status !== 'success') this._initStatus = status;
+        this.on('$receive:percent', (c, percent) => {
+            this.set('percent', fixPercent(percent), {silent: true});
         });
 
-        this.set('percent', fixPercent(this.get('percent')));
-
-        if (this.get('percent') == 100) {
-            this.set('status', 'success');
-        }
+        this.on('$receive', (c, keys) => {
+            let {status, percent} = this.get();
+            if (percent === 100 && status !== 'error')  {
+                status = 'success';
+            }
+            this.set('_status', status, {silent: true});
+        });
     }
 }
 

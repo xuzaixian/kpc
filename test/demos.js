@@ -1,24 +1,20 @@
-import {render, mount, testDemos, unmount} from './utils';
+import {render, mount, testDemos, unmount, wait, nextFrame} from './utils';
 import Vue from 'vue';
+import Intact from 'intact';
 
-const req = require.context('~/components/', true, /demos\/.*index\.js$/);
-const vueReq = require.context('~/components/', true, /demos\/.*index\.vue$/);
+const req = require.context('~/components/', true, /^((?!(affix|code)).)*\/demos\/.*index\.js$/);
+const vueReq = require.context('~/components/', true, /^((?!(affix|code)).)*\/demos\/.*index\.vue$/);
 
 describe('Demos', () => {
     let demo;
 
-    afterEach(() => {
-        unmount(demo);
-    });
+    afterEach(() => unmount(demo));
 
     describe('Intact', () => {
-        testDemos(req, (Demo, done) => {
+        testDemos(req, async (Demo) => {
             demo = mount(Demo);
-            setTimeout(() => {
-                expect(demo.element.outerHTML).to.matchSnapshot();
-
-                done();
-            });
+            await nextFrame();
+            expect(demo.element.outerHTML).to.matchSnapshot();
         });
     });
 
@@ -42,13 +38,10 @@ describe('Demos', () => {
             }
         }
 
-        testDemos(vueReq, (Demo, done) => {
+        testDemos(vueReq, async (Demo) => {
             demo = mount(wrap(Demo));
-            setTimeout(() => {
-                expect(demo.element.outerHTML).to.matchSnapshot();
-
-                done();
-            });
+            await nextFrame();
+            expect(demo.element.outerHTML).to.matchSnapshot();
         });
     });
 });

@@ -1,10 +1,13 @@
 import {Tabs, Tab} from 'kpc/components/tabs';
+import {Tooltip} from 'kpc/components/tooltip';
 
 <div class="contents">
     <div key="demos" v-if={{ self.get('demos').length }}>
         <h1>示例</h1>
         {{ self.get('demos').map(Demo => {
-            return <div class={{ `example index-${Demo.data.index}` }}
+            const highlighted = Demo.data.highlighted;
+            highlighted.sort()
+            return <div class={{ `example ${Demo.data.index}` }}
                 key={{ Demo.data.index }}
                 id={{ Demo.data.index }}
             >
@@ -16,17 +19,19 @@ import {Tabs, Tab} from 'kpc/components/tabs';
                     <div class="desc" innerHTML={{ Demo.data.contents }}></div>
                 </div>
                 <div class="example-code">
-                    <Tabs v-model={{  `file${Demo.data.index}` }}>
+                    <Tabs v-model={{ `file${Demo.data.index}` }}>
                         <Tab v-for={{ Demo.data.highlighted }} 
-                            value={{ value.file ? value.file : `index.${value.language}` }}
+                            value={{ value.filename }}
                         >
-                            {{ value.file ? value.file : `index.${value.language}` }}
+                            {{ value.filename }}
                             {{ do { 
                                 if (!value.file) {
                                     if (value.language === 'vue') {
                                         '(Vue)'
                                     } else if (value.language === 'jsx') {
                                         '(React)'
+                                    } else if (value.language === 'ts') {
+                                        '(Angular)'
                                     }
                                 }
                             } }}
@@ -36,6 +41,13 @@ import {Tabs, Tab} from 'kpc/components/tabs';
                         const file = item.file ? item.file : `index.${item.language}`;
                         return file === self.get('file' + Demo.data.index);
                     }) || {}).content }}></div>
+                    <Tooltip content="Open in CodeSandbox"
+                        v-if={{ ['index.vue', 'index.jsx'].indexOf(self.get(`file${Demo.data.index}`)) > -1 }}
+                    >
+                        <i class="ion-android-open open"
+                            ev-click={{ self._open.bind(self, Demo) }}
+                        ></i>
+                    </Tooltip>
                 </div>
             </div>
         }) }}

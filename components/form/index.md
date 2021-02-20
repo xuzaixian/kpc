@@ -12,6 +12,8 @@ sidebar: doc
 | 属性 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | labelWidth | 定义所有子孙`FormItem`组件的`label`宽度 | `String` &#124; `Number` | `undefined` |
+| layout | 指定表单布局方式 | `"horizontal"` &#124; `"vertical"` &#124; `"inline"` | `"horizontal"` |
+| starOnRequired | 当`FormItem`必填时，是否在`label`前面展示`*` | `Boolean` | `false` |
 
 ## FormItem
 
@@ -25,7 +27,9 @@ sidebar: doc
 | htmlFor | 指定`label`的`for`属性 | `String` | `undefined` | 
 | hideLabel | 是否隐藏`label`，默认会展示`label`，即使该属性为空，也会展示占位元素 | `Boolean` | `false` |
 | isDirty | 组件是否被污染，组件只有被污染后，才会进行表单验证 | `Boolean` | `false` |
-| force | 如果组件被污染，让`FormItem`更新时，强制验证。你也可以配合`isDirty`属性，指定强制验证的时机 [#6][1] | `Boolean` | `false` |
+| force | 如果组件被污染，让`FormItem`更新时，强制验证。你也可以配合`isDirty`属性，指定强制验证的时机 [#6][1]。`force`的意思是：在组件的`update`生命周期函数中去调用`validate`验证`FormItem`；默认情况下组件会`watch` `rules`以及`model`，只有在它们变化时才验证 | `Boolean` | `false` |
+| fluid | `FormItem`的宽度默认是被子元素撑开的，添加该属性可以渲染`100%`的宽度 | `Boolean` | `false` |
+| size | 控制`FormItem`的间距 | `"default"` &#124; `"small"` &#124; `"mini"` | `"default"` |
 
 # 扩展点
 

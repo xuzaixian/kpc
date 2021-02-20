@@ -4,10 +4,11 @@
 import Intact from 'intact';
 import Tooltip from './tooltip';
 import TooltipContent from './content';
+import {config} from '../utils';
 
 const h = Intact.Vdt.miss.h;
 
-function Wrapper(props, inVue) {
+function Wrapper(props, flag) {
     let {children, content, _blocks, _context, ref, ...rest} = props;
 
     if (_blocks && _blocks.content) {
@@ -18,33 +19,32 @@ function Wrapper(props, inVue) {
         _context,
         children: content,
         ref,
+        _useInDropdown: true,
         ...rest
     });
 
-    return !inVue ? 
-        [
-            h(Tooltip, {
-                _context,
-                children,
-                menu: contentVNode,
-                ...rest,
-                className: 'k-tooltip',
-            }),
-            contentVNode
-        ] :
-        h(TooltipVueWrapper, {
-            children: [
-                h(Tooltip, {
-                    _context,
-                    children: children,
-                    menu: contentVNode,
-                    ...(props.trigger ? {trigger: props.trigger} : {}),
-                }),
-                contentVNode
-            ],
-            ...rest
-        });
+    const useWrapper = flag === 'angular' || flag && config.useWrapper;
+
+    if (!useWrapper) {
+        return [h(Tooltip, {
+            _context,
+            children,
+            ...rest,
+            className: 'k-tooltip',
+        }), contentVNode]; 
+    }
+    return h(TooltipVueWrapper, {
+        children: [h(Tooltip, {
+            _context,
+            children,
+            ...(props.trigger ? {trigger: props.trigger} : {}),
+        }), contentVNode],
+        ...rest
+    });
 }
+
+// add blocks declaration for Angular
+Wrapper.blocks = ['content'];
 
 // for vue Boolean cast
 Wrapper.propTypes = TooltipContent.propTypes;

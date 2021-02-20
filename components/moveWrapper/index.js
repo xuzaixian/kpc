@@ -13,19 +13,21 @@ export default class MoveWrapper extends Intact {
 
     defaults() {
         return {
-            autoDestroy: true, 
+            autoDestroy: true,
             container: undefined,
         }
     }
 
     init(...args) {
-        super.init(...args);
+        // we must append the element before _mount lifecycles of children are called
+        this.mountedQueue.push(this._appendElement);
+        // super.init(...args);
+        Intact.prototype.init.apply(this, args);
         return this.placeholder = document.createComment("placeholder");
     }
 
-    hydrate(...args) {
-        super.hydrate(...args);
-        return this.placeholder = document.createComment('placeholder');
+    hydrate(vNode) {
+        return this.init(null, vNode);
     }
 
     update(lastVNode, nextVNode) {
@@ -39,12 +41,15 @@ export default class MoveWrapper extends Intact {
         }
     }
 
-    
+    toString() {
+        return '<!--placeholder-->';
+    }
+
     /**
-     * @brief override super destroy 
+     * @brief override super destroy
      *
      * MoveWraper component has changed the dom struction.
-     * It is always the top level dom, so we should 
+     * It is always the top level dom, so we should
      * remove it from parent dom. By passing the container
      * to remove function can do this. We can't remove it
      * directly by calling removeChild method, beacause it
@@ -56,7 +61,7 @@ export default class MoveWrapper extends Intact {
         // if (this.destroyed) {
             // return console.warn('destroyed multiple times');
         // }
-        if (this.rendered && 
+        if (this.rendered &&
             (
                 !nextVNode ||
                 !(nextVNode.type & Intact.Vdt.miss.Types.ComponentClassOrInstance) ||
@@ -71,7 +76,7 @@ export default class MoveWrapper extends Intact {
         this.off();
     }
 
-    _mount(lastVNode, nextVNode) {
+    _appendElement() {
         const container = this.get('container');
         if (container) {
             if (typeof container === 'string') {
@@ -85,14 +90,18 @@ export default class MoveWrapper extends Intact {
             let dom = this.placeholder;
             let found;
             while ((dom = dom.parentNode) && dom.nodeType === 1) {
-                if (dom.className && dom.className.split(' ').indexOf('k-dialog') > -1) {
-                    found = dom;
-                    break;
+                // dom maybe a foreignObject, and its className is an object
+                if (typeof dom.className === 'string') {
+                    if (dom.className.split(' ').indexOf('k-dialog') > -1) {
+                        found = dom;
+                        break;
+                    }
                 }
             }
             this.container = found || document.body;
         }
         this.container.appendChild(this.element);
+        this.trigger('appended');
     }
 }
 

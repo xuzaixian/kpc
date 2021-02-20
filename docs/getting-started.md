@@ -1,5 +1,5 @@
 ---
-title: 快速开始
+title: Intact中使用
 order: 0
 sidebar: doc
 ---
@@ -9,37 +9,7 @@ sidebar: doc
 在学习使用kpc之前，假设你已经掌握了以下知识：
 
 1. [webpack][1] + [babel][2]
-2. [Vue][3]（如果将kpc用于Vue项目）或者[intact][4]（如果将kpc用于Intact项目）或者[React][7]（如果将kpc用于React项目）
-
-# 使用脚手架
-
-使用[Yeoman][5]以及generator-kscpm，可以快速初始化kpc项目
-
-> 目前仅支持初始化Intact和Vue项目，React项目正在添加中
-
-1. 安装yo和generator-kscpm
-
-```shell
-npm install -g yo generator-kscpm
-```
-
-2. 初始化kpc项目
-
-kscpm提供了很多工程模板，用于初始化项目，页面以及组件等
-
-```shell
-yo kscpm # 列出所有可选工程模板
-yo kscpm:intact # 初始化基于intact的kpc项目
-yo kscpm:vue # 初始化基于vue的kpc项目
-
-...
-```
-
-3. 启动项目
-
-```shell
-npm run dev
-```
+2. [intact][4]
 
 # 手动引入
 
@@ -49,7 +19,7 @@ npm run dev
 npm install kpc -S
 ```
 
-## 单文件构建版
+## 单文件引入
 
 如果你的项目没有使用webpack来构建，可以引入单文件构建版。将`kpc.css`和`kpc.js`在html文件中引入。
 此时所有组件都在`Kpc`命名空间下，例如`Kpc.Button` `Kpc.Table`等。
@@ -194,7 +164,7 @@ npm install postcss-loader autoprefixer stylus-loader --save-dev
 
 将css加载配置修改为（通过`stylus-loader`的`import`配置，我们可以引入主题文件）：
 
-```js
+```javascript
 const autoprefixer = require('autoprefixer');
 
 module.export = {
@@ -209,7 +179,7 @@ module.export = {
             ...
             // 编译stylus
             {
-                test: /\.(styl|css)$/,
+                test: /\.styl$/,
                 use: [
                     {
                         loader: 'style-loader'
@@ -241,6 +211,12 @@ module.export = {
                             sourceMap: false,
                             // 使用import引入主题文件，详见定制主题
                             // 'import': path.resolve(__dirname, 'styles/themes/ksyun/index.styl'),
+
+                            /* 对于stylus-loader@4 */
+                            // stylusOptions: {
+                            //     incluceCss: true,
+                            //     import: ['~kpc-vue/@stylus/styles/themes/ksyun/index.styl'],
+                            // }
                         }
                     }
                 ]

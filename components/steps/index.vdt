@@ -1,4 +1,5 @@
 import Step from './step';
+import {getRestProps} from '../utils';
 
 const {
     children, value, style,
@@ -25,6 +26,7 @@ let steps = (Array.isArray(children) ? children : [children]).filter(vNode => {
             props['ev-click'] = self._changeIndex.bind(self, stepIndex);
         }
         stepIndex++;
+        vNode.$ = true;
         return true;
     }
     return false;
@@ -36,4 +38,4 @@ steps = steps.map(vNode => {
     return vNode;
 });
 
-<div class={{ classNameObj }} style={{ style }}>{{ steps }}</div>
+<div class={{ classNameObj }} {{ ...getRestProps(self) }}>{{ steps }}</div>

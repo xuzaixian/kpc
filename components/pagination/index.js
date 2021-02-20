@@ -16,6 +16,12 @@ export default class Pagination extends Intact {
         showGoto: Boolean,
         size: ['large', 'default', 'small', 'mini'],
         noBorder: Boolean,
+        simple: Boolean,
+        showLimits: Boolean,
+    };
+
+    static events = {
+        change: true,
     };
 
     defaults() {
@@ -30,6 +36,8 @@ export default class Pagination extends Intact {
             showGoto: false,
             size: 'default',
             noBorder: false,
+            simple: false,
+            showLimits: true,
         };
     }
 
@@ -40,13 +48,20 @@ export default class Pagination extends Intact {
         this.on('$change:limit', (c, v) => {
             const oldCurrent = this.get('current');
             if (oldCurrent !== 1) {
-                this.set('current', 1, {silent: true});
-                this.update();
+                // we should not silent it, but let it trigger change event
+                // to sync the value to parent
+                // set a flag to indicate that this set will be ignored to trigger
+                // change event again in bellow $change:current callback
+                // #341
+                this._ignore = true;
+                this.set('current', 1);
+                this._ignore = false;
             }
             this.trigger('change', {limit: v, current: 1});
         });
 
         this.on('$change:current', (c, v) => {
+            if (this._ignore) return;
             this.trigger('change', {limit: this.get('limit'), current: v});
         });
     }
@@ -62,7 +77,12 @@ export default class Pagination extends Intact {
             page = 1;
         }
 
-        this.set('current', page);
+        if (this.get('current') !== page) {
+            this.set('current', page);
+        } else {
+            // force update to fix invalid input
+            this.update();
+        }
     }
 
     prev() {

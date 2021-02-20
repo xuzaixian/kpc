@@ -1,4 +1,5 @@
 import Intact from 'intact';
+import {nextFrame as _nextFrame} from '../components/utils';
 
 export function render(Component, props) {
     const c = new Component(props); 
@@ -7,9 +8,17 @@ export function render(Component, props) {
     return c;
 }
 
-export function mount(Component) {
+export function mount(Component, style, data) {
     const container = document.createElement('div');
     container.style = "width: 800px; height: 1080px; overflow: auto";
+    if (style) {
+        for (let key in style) {
+            container.style[key] = style[key];
+        }
+    }
+    if (data) {
+        container.className = 'example ' + data.index;
+    }
     document.body.appendChild(container);
     const instance = Intact.mount(Component, container);
     // scroll to the view
@@ -41,7 +50,22 @@ export function dispatchEvent(target, eventName, options) {
 
 export function getElement(query) {
     const elements = document.querySelectorAll(query);
-    return elements[elements.length - 1];
+    for (let i = elements.length - 1; i > -1; i--) {
+        if (elements[i].style.display !== 'none') {
+            return elements[i];
+        }
+    }
+}
+
+export function getElements(query) {
+    const elements = document.querySelectorAll(query);
+    const ret = [];
+    for (let i = 0; i < elements.length; i++) {
+        if (elements[i].style.display !== 'none') {
+            ret.push(elements[i]);
+        }
+    }
+    return ret;
 }
 
 export function testDemos(req, test) {
@@ -64,10 +88,25 @@ export function testDemos(req, test) {
         const value = groups[key];
         describe(key, () => {
             value.forEach(value => {
-                it(value.title, (done) => {
-                    test(value.Demo, done);
+                it(value.title, async () => {
+                    await test(value.Demo);
+                    // if (key === 'code') {
+                        // await wait(1000);
+                    // }
                 });
             });
         });
+    });
+}
+
+export function wait(time) {
+    return new Promise(resolve => {
+        setTimeout(resolve, time);
+    });
+}
+
+export function nextFrame() {
+    return new Promise(resolve => {
+        _nextFrame(resolve);
     });
 }

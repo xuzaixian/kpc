@@ -2,13 +2,13 @@ import BasicDemo from '~/components/upload/demos/basic';
 import DragDemo from '~/components/upload/demos/drag';
 import GalleryDemo from '~/components/upload/demos/gallery';
 import ManuallyDemo from '~/components/upload/demos/manually';
-import {mount, unmount, dispatchEvent, getElement} from 'test/utils';
+import {mount, unmount, dispatchEvent, getElement, wait} from 'test/utils';
 import Upload from 'kpc/components/upload';
 import Intact from 'intact';
 
-function getDataTransfer(names, options = {}) {
+function getDataTransfer(names, options = {}, type = '') {
     const data = names.map(item => {
-        const file = new File([item], `${options.name || item}.${options.type || 'png'}`);
+        const file = new File([item], `${options.name || item}.${options.type || 'png'}`, {type});
         return file;
     });
     const dt = new DataTransfer();
@@ -19,11 +19,34 @@ function getDataTransfer(names, options = {}) {
     return dt;
 }
 
+let respond = xhr => { xhr.respond(200) };
+
+// we should trigger change event manually in the newest ChromeHeadless
+function fixInputChange(input) {
+    let files;
+    Object.defineProperty(input, 'files', {
+        set(v) { files = v; dispatchEvent(input, 'change'); },
+        get(v) { return files }
+    });
+}
+
 describe('Upload', () => {
     let instance;
 
-    afterEach((done) => {
+    beforeEach(function() {
+        this.xhr = sinon.useFakeXMLHttpRequest();
+        const requests = this.requests = [];
+        this.xhr.onCreate = (xhr) => {
+            setTimeout(() => {
+                respond(xhr);
+            });
+        };
+    });
+
+    afterEach(function(done) {
         unmount(instance);
+        respond = xhr => { xhr.respond(200) };
+        this.xhr.restore();
         setTimeout(done, 400);
     });
 
@@ -32,33 +55,30 @@ describe('Upload', () => {
         instance = mount(BasicDemo);
 
         const upload = instance.vdt.vNode.children;
-        upload.on('success', () => {
-            setTimeout(() => {
-                expect(instance.element.innerHTML).to.matchSnapshot();
+        upload.on('success', async () => {
+            await wait(500);
+            expect(instance.element.innerHTML).to.matchSnapshot();
 
-                // beforeRemove
-                const remove = instance.element.querySelector('.k-close');
-                remove.click();
-                let dialog = getElement('.k-dialog');
-                const [cancel] = dialog.querySelectorAll('.k-footer .k-btn');
-                cancel.click();
-                setTimeout(() => {
-                    expect(instance.element.innerHTML).to.matchSnapshot();
+            // beforeRemove
+            const remove = instance.element.querySelector('.k-close');
+            remove.click();
+            let dialog = getElement('.k-dialog');
+            const [cancel] = dialog.querySelectorAll('.k-footer .k-btn');
+            cancel.click();
+            await wait(500);
+            expect(instance.element.innerHTML).to.matchSnapshot();
 
-                    remove.click();
-                    dialog = getElement('.k-dialog');
-                    const [, ok] = dialog.querySelectorAll('.k-footer .k-btn');
-                    ok.click();
-                    setTimeout(() => {
-                        expect(instance.element.innerHTML).to.matchSnapshot();
+            remove.click();
+            dialog = getElement('.k-dialog');
+            const [, ok] = dialog.querySelectorAll('.k-footer .k-btn');
+            ok.click();
+            await wait(500);
+            expect(instance.element.innerHTML).to.matchSnapshot();
 
-                        done();
-                    }, 500);
-                }, 500);
-
-            }, 500);
+            done();
         });
         const input = instance.element.querySelector('input');
+        fixInputChange(input);
         input.files = getDataTransfer(['a']).files;
         expect(instance.element.innerHTML).to.matchSnapshot();
     });
@@ -68,12 +88,11 @@ describe('Upload', () => {
         instance = mount(DragDemo);
 
         const upload = instance.vdt.vNode.children;
-        upload.on('success', () => {
-            setTimeout(() => {
-                expect(instance.element.innerHTML).to.matchSnapshot();
+        upload.on('success', async () => {
+            await wait(500);
+            expect(instance.element.innerHTML).to.matchSnapshot();
 
-                done();
-            }, 500);
+            done();
         });
         const handle = instance.element.querySelector('.k-handle');
         dispatchEvent(handle, 'dragenter');
@@ -91,24 +110,24 @@ describe('Upload', () => {
         instance = mount(GalleryDemo);
 
         const upload = instance.vdt.vNode.children;
-        upload.one('success', () => {
-            setTimeout(() => {
+        upload.one('success', async () => {
+            await wait(600);
+            expect(instance.element.innerHTML.replace(/blob:[^"]*/g, '')).to.matchSnapshot();
+
+            const view = instance.element.querySelector('.k-overlap');
+            view.click();
+            const dialog = getElement('.k-dialog');
+            expect(dialog.innerHTML.replace(/blob:[^"]*/g, '')).to.matchSnapshot();
+
+            upload.one('error', () => {
                 expect(instance.element.innerHTML.replace(/blob:[^"]*/g, '')).to.matchSnapshot();
 
-                const view = instance.element.querySelector('.k-overlap');
-                view.click();
-                const dialog = getElement('.k-dialog');
-                expect(dialog.innerHTML.replace(/blob:[^"]*/g, '')).to.matchSnapshot();
-
-                upload.one('error', () => {
-                    expect(instance.element.innerHTML.replace(/blob:[^"]*/g, '')).to.matchSnapshot();
-
-                    done();
-                });
-                input.files = getDataTransfer(['b', 'c', 'd']).files;
-            }, 500);
+                done();
+            });
+            input.files = getDataTransfer(['b', 'c', 'd']).files;
         });
         const input = instance.element.querySelector('input');
+        fixInputChange(input);
         input.files = getDataTransfer(['a']).files;
         expect(instance.element.innerHTML.replace(/blob:[^"]*/g, '')).to.matchSnapshot();
     });
@@ -118,14 +137,14 @@ describe('Upload', () => {
         instance = mount(ManuallyDemo);
 
         const upload = instance.vdt.vNode.children;
-        upload.one('success', () => {
-            setTimeout(() => {
-                expect(instance.element.innerHTML).to.matchSnapshot();
-                done();
-            }, 500);
+        upload.one('success', async () => {
+            await wait(500);
+            expect(instance.element.innerHTML).to.matchSnapshot();
+            done();
         });
 
         const input = instance.element.querySelector('input');
+        fixInputChange(input);
         input.files = getDataTransfer(['a']).files;
         expect(instance.element.innerHTML).to.matchSnapshot();
         instance.upload();
@@ -145,7 +164,8 @@ describe('Upload', () => {
         }
         instance = mount(Demo);
         const input = instance.element.querySelector('input');
-        input.files = getDataTransfer(['a'.repeat(1024 * 2)], {name: 'a'}).files;
+        fixInputChange(input);
+        input.files = getDataTransfer(['a'.repeat(1025 * 1)], {name: 'a'}).files;
     });
 
     it('should handle error on uploading correctly', function(done) {
@@ -154,24 +174,26 @@ describe('Upload', () => {
             @Intact.template()
             static template = `
                 <Upload
-                    action="//jsonplaceholder.typicode.com/posts/"
+                    action="//localhost"
                     ev-error={{ self._onError }}
                 />
             `;
             _init() {
                 this.Upload = Upload;
             }
-            _onError(e) {
-                setTimeout(() => {
-                    // FIXME: the innerHTML has string: `height: 44px;` when we run test in travis-ci
-                    expect(instance.element.innerHTML.replace(/height: \d+px;/, '')).to.matchSnapshot();
-                    done();
-                }, 500);
+            async _onError(e) {
+                await wait(500);
+                // FIXME: the innerHTML has string: `height: 44px;` when we run test in travis-ci
+                expect(instance.element.innerHTML.replace(/height: \d+px;/, '')).to.matchSnapshot();
+                done();
             }
         }
         instance = mount(Demo);
         const input = instance.element.querySelector('input');
-        input.files = getDataTransfer(['a'.repeat(1024 * 512)], {name: 'a'}).files;
+        fixInputChange(input);
+        input.files = getDataTransfer(['a'.repeat(1024 * 100)], {name: 'a'}).files;
+
+        respond = xhr => xhr.respond(500)
     });
 
     it('should abort request when remove file in progress', function(done) {
@@ -190,13 +212,67 @@ describe('Upload', () => {
         }
         instance = mount(Demo);
         const input = instance.element.querySelector('input');
+        fixInputChange(input);
         input.files = getDataTransfer(['a'.repeat(1024 * 512)], {name: 'a'}).files;
-        instance.refs.upload.one('progress', () => {
+        instance.refs.upload.one('progress', async () => {
             instance.element.querySelector('.k-close').click();
-            setTimeout(() => {
-                expect(instance.element.innerHTML).to.matchSnapshot();
-                done();
-            }, 500);
+            await wait(500);
+            expect(instance.element.innerHTML).to.matchSnapshot();
+            done();
         });
+    });
+
+    it('should check file type', (done) => {
+        const i = new Upload({accept: '.jpg, image/png, video/*, .tar'});
+        expect(!!i._isValidType('image/gif', '')).to.be.false;
+        expect(!!i._isValidType('image/jpg', 'a.jpg')).to.be.true;
+        expect(!!i._isValidType('image/jpg', 'a.JPG')).to.be.true;
+        expect(!!i._isValidType('image/png', '')).to.be.true;
+        expect(!!i._isValidType('video/avi', '')).to.be.true;
+        expect(!!i._isValidType('application/x-tar', 'a.tar')).to.be.true;
+        
+        instance = mount(BasicDemo);
+
+        const upload = instance.vdt.vNode.children;
+        upload.on('error', (e) => {
+            expect(e.message).to.matchSnapshot();
+            done();
+        });
+
+        const input = instance.element.querySelector('input');
+        fixInputChange(input);
+        input.files = getDataTransfer(['a'], {type: 'avi'}, 'video/avi').files;
+    });
+
+    it('should not add file if beforeUpload returns false', (done) => {
+        class Demo extends Intact {
+            @Intact.template()
+            static template = `
+                <Upload
+                    action="//jsonplaceholder.typicode.com/posts/"
+                    ref="upload"
+                    beforeUpload={{ self.beforeUpload }}
+                    type="gallery"
+                    limit={{ 1 }}
+                />
+            `;
+            _init() {
+                this.Upload = Upload;
+            }
+            beforeUpload(file) {
+                return new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        const files = this.refs.upload.get('files');
+                        expect(files.length).to.eql(0);
+                        reject();
+                        done();
+                    }, 100);
+                });
+            }
+        }
+        instance = mount(Demo);
+        const input = instance.element.querySelector('input');
+        fixInputChange(input);
+        input.files = getDataTransfer(['a'.repeat(1024 * 512)], {name: 'a'}).files;
     });
 });

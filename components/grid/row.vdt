@@ -1,5 +1,5 @@
 import Col from './col';
-import {mapChildren} from '../utils';
+import {mapChildren, getRestProps} from '../utils';
 import gutterStyle from './utils';
 
 let {
@@ -31,10 +31,13 @@ const classNameObj = {
     /* }); */
 /* } */
 
-<div class={{ classNameObj }} style={{ style }}>{{
+<div {{ ...getRestProps(self) }} class={{ classNameObj }} style={{ style }}>{{
     mapChildren(children, vNode => {
         if (vNode && vNode.tag === Col) {
             vNode.props = {...vNode.props, gutter};
+            // make it clone
+            vNode.$ = true;
+            /* return _Vdt.miss.clone(vNode, {gutter}); */
         }
         return vNode;
     }) 

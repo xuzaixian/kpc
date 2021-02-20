@@ -20,6 +20,10 @@ sidebar: doc
 | onText | `confirm`模式下的“确认”按钮文案 | `String` | `"确认"` |
 | cancelText | `confirm`模式下的“取消”按钮文案 | `String` | `"取消"` |
 | container | 指定弹出提示内容追加的位置，默认：`Dialog`类型的组件会追加到`Dialog`中，其他会追加到`body`中。你可以传入函数返回一个DOM用来作为插入的容器，或者传入字符串用来给`querySelector`进行查询 | `Function` &#124; `String` | `undefined` |
+| theme | 指定主题 | `"dark"` &#124; `"light"` | `"dark"` |
+| disabled | 是否禁用提示 | `Boolean` | `false` |
+| always | 是否一直保持当前展示/隐藏状态 | `Boolean` | `false` |
+| size | 弹层尺寸 | `"default"` &#124; `"small"` | `"default"` |
 
 # 事件
 
@@ -29,3 +33,9 @@ sidebar: doc
 | hide | 弹层隐藏事件 | - |
 | ok | `confirm`模式下，点击“确认”按钮触发 | - |
 | cancel | `confirm`模式下，点击“取消”按钮触发 | - |
+
+# 扩展点
+
+| 名称 | 说明 |
+| --- | --- |
+| content | 自定义提示内容 |

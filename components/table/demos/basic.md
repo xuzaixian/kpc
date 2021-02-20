@@ -14,7 +14,7 @@ const data = [{a: '第一行', b: '哈哈2'}, {a: '第二行', b: '哈哈2'}];
 
 <div>
     <Table scheme={{ scheme }} data={{ data }} resizable ref="__test" />
-    <Table data={{ data }} resizable >
+    <Table data={{ data }} resizable>
         <TableColumn key="a" title="表头1" />
         <TableColumn key="b" title="表头2" />
     </Table>
@@ -22,7 +22,7 @@ const data = [{a: '第一行', b: '哈哈2'}, {a: '第二行', b: '哈哈2'}];
 ```
 
 ```styl
-.k-table-wrapper
+.k-table
     margin-bottom 20px
 ```
 

@@ -3,15 +3,31 @@ import template from './index.vdt';
 import '../../styles/kpc.styl';
 import './index.styl';
 import Calendar from './calendar';
-import {getNowDate, isLT, isGT, getDateString, dispatchEvent, createDate} from './utils';
+import {
+    getNowDate, isLT, isGT, getDateString,
+    dispatchEvent, createDate, FORMATS
+} from './utils';
 import {getTransition} from '../utils';
 import * as shortcuts from './shortcuts';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+dayjs.extend(customParseFormat);
+
+const typeMap = {0: 'begin', 1: 'end'};
 
 const {isEqual} = Intact.utils;
 
 export default class Datepicker extends Intact {
     @Intact.template()
     static template = template;
+
+    static getDateString = getDateString;
+
+    static createDate = createDate;
+
+    static events = {
+        change: true,
+    };
 
     static propTypes = {
         value: [String, Array, Date, Number],
@@ -26,12 +42,18 @@ export default class Datepicker extends Intact {
         disabledHours: Boolean,
         disabledMinutes: Boolean,
         disabledSeconds: Boolean,
-        multiple: Boolean, 
+        multiple: Boolean,
+        format: String,
+        valueFormat: String,
+        showFormat: String,
+        minDate: [String, Date],
+        maxDate: [String, Date],
+        disabledDate: Function,
     };
 
     defaults() {
         return {
-            value: undefined, 
+            value: undefined,
             clearable: false,
             placeholder: undefined,
             disabled: false,
@@ -39,12 +61,16 @@ export default class Datepicker extends Intact {
             type: 'date', // date | datetime
             range: false,
             transition: 'c-slidedown',
-            shortcuts: undefined, 
+            shortcuts: undefined,
             container: undefined,
             disabledHours: false,
             disabledMinutes: false,
             disabledSeconds: false,
             multiple: false,
+            format: undefined,
+            valueFormat: undefined,
+            showFormat: undefined,
+            disabledDate: undefined,
 
             _value: undefined, // for range
             _rangeEndDate: undefined,
@@ -55,25 +81,78 @@ export default class Datepicker extends Intact {
     _init() {
         // proxy _value to value
         this.on('$change:_value', (c, v) => {
-            // if only select one date for range, set with undefined
-            if (v && v.length === 1) {
-                v = undefined;
+            if (Array.isArray(v)) {
+                // if only select one date for range, do not change value, #259
+                if (v.length === 1 && this.get('range')) {
+                    // trigger select start event for use to custom min/max date, #371
+                    this.trigger('selectStart', this._dateToString(v[0]));
+                    return;
+                }
+                v = v.map(v => this._dateToString(v));
+            } else if (v) {
+                v = this._dateToString(v);
             }
             this.set('value', v);
         });
 
         this.on('$receive:value', (c, v) => {
+            // conver to dayjs instance
+            let hasValue = true;
+            if (Array.isArray(v)) {
+                if (!v.length) hasValue = false;
+                v = v.map(v => {
+                    if (!v) hasValue = false;
+                    return this._createDate(v)
+                });
+            } else if (v) {
+                v = this._createDate(v);
+            } else {
+                hasValue = false;
+            }
+            // we should set to the date panel, otherwise it will change the value
+            // and set datetime to now, #436
+            if (!hasValue) {
+                const {begin, end} = this.refs;
+                begin && begin.set('_isSelectTime', false);
+                end && end.set('_isSelectTime', false);
+            }
+
             this.set('_value', v);
         });
     }
 
+    _createDate(value) {
+        return dayjs(value, typeof value === 'string' ? this._getValueFormat() : undefined);
+    }
+
+    _createDateByShowFormat(value) {
+        return dayjs(value, this._getShowFormat());
+    }
+
+    _dateToString(value) {
+        return value.format(this._getValueFormat());
+    }
+
+    _getValueFormat() {
+        const {format, valueFormat, type} = this.get();
+        return valueFormat || format || FORMATS[type];
+    }
+
+    _getShowFormat() {
+        const {format, showFormat, type} = this.get();
+        return showFormat || format || FORMATS[type];
+    }
+
     onClear(e) {
         e.stopPropagation();
-        if (this.get('range')) {
-            this.set('_value', undefined);
-        } else {
-            this.set('value', undefined);
-        }
+        // we should reset the flag to let user re-select date
+        // and it also destroys Time panel and avoids it triggering change event, #419
+        const {begin, end} = this.refs;
+        begin.set('_isSelectTime', false);
+        end && end.set('_isSelectTime', false);
+        this.set('_value', undefined);
+        this._oldValue = undefined;
+        this.trigger('change', undefined);
     }
 
     _hide() {
@@ -88,27 +167,31 @@ export default class Datepicker extends Intact {
     }
 
     _onChangeShow(c, v) {
+        if (v) {
+            const {begin, end} = this.refs;
+            begin && begin.initState();
+            end && end.initState();
+        }
         this.set('_isShow', v);
         this._hasSelectByArrowKey = false;
     }
 
-    _onChangeShowDate(type, c, v) {
+    _onChangeShowDate(c, v) {
+        const type = typeMap[c.get('_id')];
         const begin = this.refs.begin;
         const end = this.refs.end;
         if (type === 'begin') {
-            const endShowDate = end.getShowDate();
-            endShowDate.setDate(1);
+            if (!end) return;
+            const endShowDate = end.getShowDate().date(1);
             if (v >= endShowDate) {
-                const endShowDate = createDate(v);
-                endShowDate.setMonth(endShowDate.getMonth() + 1);
+                const endShowDate = v.add(1, 'month');
                 end.setShowDate(endShowDate);
             }
         } else {
-            const beginShowDate = begin.getShowDate();
-            v.setDate(1);
+            if (!begin) return;
+            const beginShowDate = begin.getShowDate().date(1);
             if (v <= beginShowDate) {
-                const beginShowDate = createDate(v);
-                beginShowDate.setMonth(beginShowDate.getMonth() - 1);
+                const beginShowDate = v.subtract(1, 'momth');
                 begin.setShowDate(beginShowDate);
             }
         }
@@ -116,8 +199,8 @@ export default class Datepicker extends Intact {
 
     _setBeginShowDate(c) {
         const [start] = this.get('_value') || [];
-        const date = start ? createDate(start) : getNowDate();
-        c.set('_showDate', date, {silent: true})
+        const date = start || getNowDate();
+        c.set('_showDate', date);
     }
 
     _setEndShowDate(c) {
@@ -126,20 +209,15 @@ export default class Datepicker extends Intact {
         let date;
         // if in the same month, show next month
         if (start && end) {
-            start = createDate(start);
-            end = createDate(end);
-            if (start.getFullYear() === end.getFullYear() &&
-                start.getMonth() === end.getMonth()
-            ) {
-                end.setMonth(end.getMonth() + 1);
+            if (start.isSame(end, 'month')) {
+                end = end.add(1, 'month');
             }
             date = end;
         } else {
-            date = getNowDate();
-            date.setMonth(date.getMonth() + 1);
+            date = getNowDate().add(1, 'month');
         }
 
-        c.set('_showDate', date, {silent: true})
+        c.set('_showDate', date);
     }
 
     _checkDateInRange(date, isOut) {
@@ -147,43 +225,58 @@ export default class Datepicker extends Intact {
         const _rangeEndDate = this.get('_rangeEndDate');
 
         if (start) {
-            const _start = createDate(start);
             if (end) {
                 return {
-                    'k-in-range': !isOut && 
-                        isGT(date, _start) && 
-                        isLT(date, createDate(end))
+                    'k-in-range': !isOut &&
+                        isGT(date, start) &&
+                        isLT(date, end)
                 };
             } else if (_rangeEndDate) {
                 return {
                     'k-in-range': !isOut &&
-                        isGT(date, _start >= _rangeEndDate ? _rangeEndDate : _start) &&
-                        isLT(date, _start <= _rangeEndDate ? _rangeEndDate : _start)
+                        isGT(date, start >= _rangeEndDate ? _rangeEndDate : start) &&
+                        isLT(date, start <= _rangeEndDate ? _rangeEndDate : start)
                 };
             }
         }
     }
 
-    _onChangeValueForRange(type, c, v) {
+    _onChangeValueForRange(c, v) {
+        const type = typeMap[c.get('_id')];
         let value = this.get('_value');
 
-        if (isEqual(v, value)) return;
+        if (v && value && v.length === value.length &&
+            v.every((v, index) => v.isSame([value.index])) ||
+            v === value
+        ) return;
 
         const {begin, end} = this.refs;
         // if cancel all selected value of range, the length of v is 0
-        const length = v.length;
-        if (v && length) {
+        if (v && v.length) {
+            const length = v.length;
             if (length === 2) {
                 // select the first begin/end date
                 value = v.slice(0);
             } else {
                 // select or re-select
-                const last = v[v.length - 1];
-                value = [last];
+                const last = v[length - 1];
+                // if we select the end time firstly
+                // we should set the begin time automatically
+                if (c.isSelectTime && type === 'end') {
+                    value = [begin.getShowDate(), last];
+                } else {
+                    value = [last];
+                }
             }
         } else {
             this.set('value', undefined);
         }
+
+        if (!c.isSelectTime) {
+            value.sort((a, b) => a > b ? 1 : -1);
+        }
+
+        this.set('_value', value);
 
         // when the ScrollSelect changed, the refs may not exist
         if (begin && end) {
@@ -200,12 +293,6 @@ export default class Datepicker extends Intact {
                 end.set('_isSelectTime', false, {async: true});
             }
         }
-
-        if (!c.isSelectTime) {
-            value.sort();
-        }
-
-        this.set('_value', value);
     }
 
     _highlightRangeDays(date, isOut) {
@@ -262,22 +349,112 @@ export default class Datepicker extends Intact {
     }
 
     _onHide() {
-        dispatchEvent(this.refs.input.refs.input, 'focusout');
+        // add _dispatch true to let Input knowns ignore this event
+        // and don't endInput, #523
+        dispatchEvent(this.refs.input.refs.input, 'focusout', {_dispatch: true});
+        this._triggerChange();
     }
 
     _setValue(value) {
         const type = this.get('type');
         if (this.get('range')) {
-            this.set('_value', value.map(value => getDateString(value, type)));
+            this.set('_value', value.map(value => dayjs(value)));
         } else {
-            this.set('value', getDateString(value, type));
+            this.set('_value', dayjs(value));
         }
         this.refs.calendar.hide();
     }
 
     _format() {
-        const {value, range} = this.get();
-        return Array.isArray(value) ? range ? value.join(' ~ ') : value.join(', ') : value;
+        let {_value, range} = this.get();
+        if (Array.isArray(_value)) {
+            // do not show if has not selected
+            if (range && _value.length !== 2) return;
+            _value = _value.map(v => v.format(this._getShowFormat()));
+        } else if (_value) {
+            _value = _value.format(this._getShowFormat());
+        }
+        return Array.isArray(_value) ? range ? _value.join(' ~ ') : _value.join(', ') : _value;
+    }
+
+    _confirm() {
+        this.refs.calendar.hide();
+    }
+
+    _onInput(e) {
+        const value = e.target.value.trim();
+        const {multiple, range} = this.get();
+        if (multiple) {
+            this._setValueOnInputForArray(value.split(','));
+        } else if (range) {
+            if (this._setValueOnInputForArray(value.split('~'))) {
+                this._setBeginShowDate(this.refs.begin);
+                this._setEndShowDate(this.refs.end);
+            }
+        } else {
+            if (!value) {
+                this.set('_value', '');
+                return;
+            }
+            const date = this._createDateByShowFormat(value);
+            if (!this._isInvalidDate(date, 'begin')) {
+                this.set('_value', date);
+            }
+        }
+    }
+
+    _setValueOnInputForArray(values) {
+        const {range} = this.get();
+        const ret = [];
+        let hasInvalid = false;
+        let ref = 'begin';
+        values.find((value, index) => {
+            value = value.trim();
+            if (!value) return;
+            const date = this._createDateByShowFormat(value);
+            if (range && index === 1) ref = 'end';
+            if (this._isInvalidDate(date, ref)) {
+                return hasInvalid = true;
+            }
+            ret.push(date);
+        });
+
+        if (!hasInvalid) {
+            this.set('_value', ret);
+            return true;
+        }
+
+        return false;
+    }
+
+    _isInvalidDate(date, ref) {
+        const calendar = this.refs[ref];
+        return !date.isValid() ||
+            calendar._isDisabledDate(date) ||
+            calendar._isDisabledTime(date);
+    }
+
+    _onChange() {
+        if (!this.get('_isShow')) {
+            this._triggerChange();
+        }
+        this.update();
+    }
+
+    _triggerChange() {
+        const {value} = this.get();
+        if (!isEqual(this._oldValue, value)) {
+            this._oldValue = value;
+            this.trigger('change', value);
+        }
+    }
+
+    _onWheel() {
+        this.refs.input.blur();
+    }
+
+    _onFocus() {
+        this._oldValue = this.get('value');
     }
 }
 

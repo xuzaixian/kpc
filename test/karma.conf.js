@@ -1,11 +1,11 @@
-var webpackConfig = require('./webpack.config');
-var path = require('path');
+const {webpackConfig} = require('./webpack');
+const path = require('path');
 
 console.log(
     '\x1b[33m%s\x1b[0m', 
     `If the documents of components has not been built
 please run:
-	npx gulp doc
+	npx gulp doc:prepare
 `
 );
 
@@ -42,7 +42,7 @@ module.exports = function (config) {
             './index.js': ['webpack', 'sourcemap'],
             '**/__snapshots__/**/*.md': ['snapshot'],
         },
-        webpack: webpackConfig,
+        webpack: webpackConfig().toConfig(),
         webpackMiddleware: {
             // noInfo: true
         },

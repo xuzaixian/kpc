@@ -15,6 +15,9 @@
     .k-content
         font-size $steps-main-content-font-size 
         white-space nowrap
+    .k-inner
+    .k-main
+        transition all $transition
 
     // default and line type
     &.k-default
@@ -75,6 +78,10 @@
         .k-head
             .k-inner
                 display inline-block
+        .k-step
+            white-space nowrap
+        .k-wrapper
+            overflow hidden
 
     // default
     &.k-default
@@ -105,12 +112,8 @@
             .k-inner
                 vertical-align middle
                 margin-top -2px
-        .k-step
-            white-space nowrap
         .k-step:not(:first-of-type)
             padding-left calcBorderWidth()
-        .k-wrapper
-            overflow hidden
     
     // line type
     &.k-line
@@ -180,4 +183,4 @@
             cursor pointer
 
 
-require($theme-dir + '/steps.styl')
+requireTheme('steps')

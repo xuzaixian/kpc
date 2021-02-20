@@ -1,4 +1,4 @@
-import Intact from 'intact'; 
+import Intact from 'intact';
 import Select from '../select';
 import template from './index.vdt';
 import '../../styles/kpc.styl';
@@ -7,6 +7,8 @@ import './index.styl';
 export default class Cascader extends Select {
     @Intact.template()
     static template = template;
+
+    static blocks = [...Select.blocks, 'format'].filter(Boolean);
 
     defaults() {
         return {
@@ -62,8 +64,9 @@ export default class Cascader extends Select {
      * on sub menu showed, load data if children is empty
      */
     async _onSubMenuShow(item) {
-        if (item.children && !item.children.length) {
+        if (item.children && !item.children.length && !item.loaded) {
             await this.get('loadData').call(this, item);
+            item.loaded = true;
             this.update();
         }
     }
@@ -73,6 +76,7 @@ export default class Cascader extends Select {
     handleProps(props, labelObj, level) {
         const {_value, value} = this.get();
         let active = false;
+        let selected = false;
 
         if (Array.isArray(_value)) {
             if (_value[level] === props.value) {
@@ -83,10 +87,11 @@ export default class Cascader extends Select {
         if (Array.isArray(value)) {
             if (value[level] === props.value) {
                 labelObj.values.push(props);
+                selected = true;
             }
         }
 
-        return {active};
+        return {active, selected};
     }
 
     _onSearch(e) {

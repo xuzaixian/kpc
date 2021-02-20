@@ -5,6 +5,9 @@ import './index.styl';
 import Option from './option';
 import Group from './group';
 import {selectInput, _$, isStringOrNumber, toggleArray} from '../utils';
+import {dispatchEvent} from '../datepicker/utils';
+
+const {isEqual} = Intact.utils;
 
 export default class Select extends Intact {
     @Intact.template()
@@ -26,7 +29,21 @@ export default class Select extends Intact {
         card: Boolean,
         container: [Function, String],
         inline: Boolean,
+        loading: Boolean,
+        hideIcon: Boolean,
+        position: Object,
+        searchable: Boolean,
     };
+
+    static events = {
+        keypress: true,
+        keydown: true,
+        show: true,
+        hide: true,
+        change: true
+    };
+
+    static blocks = ['format', 'value', 'values', 'menu'];
 
     defaults() {
         return {
@@ -34,23 +51,23 @@ export default class Select extends Intact {
             value: '',
             multiple: false, // 是否支持多选
             disabled: false,
-            clearable: false, // 是否可清空 
+            clearable: false, // 是否可清空
             filterable: false, // 搜索筛选
             filter: (keywords, props) => {
                 let valid = false;
                 let tmp;
                 if (
-                    keywords == null || 
+                    keywords == null ||
                     (
                         props.label &&
                         ~props.label.toLowerCase().indexOf((tmp = keywords.toLowerCase()))
-                    ) || 
+                    ) ||
                     (
-                        isStringOrNumber(props.value) && 
+                        isStringOrNumber(props.value) &&
                         ~String(props.value).toLowerCase().indexOf(tmp)
                     )
                 ) {
-                    valid = true; 
+                    valid = true;
                 }
 
                 return valid;
@@ -64,27 +81,61 @@ export default class Select extends Intact {
             card: false, // 卡片式分组
             container: undefined,
             inline: false,
+            loading: false,
+            hideIcon: false,
+            position: {my: 'left top+8', at: 'left bottom'},
+            searchable: false,
 
             _show: false,
             _activeLabel: undefined,
+            _checkedKeys: [],
         }
     }
 
     _init() {
+        this.on('$change:value', (c, v) => {
+            this.set('_checkedKeys', v || []);
+        });
         this.on('$changed:value', () => {
-            if (this.get('multiple') && this.get('_show')) {
-                this.refs.menu.position();
+            if (this._isMultiple()) {
+                this._refreshPosition();
             }
         });
     }
 
+    hide() {
+        this.refs.menu.hide(true);
+    }
+
+    _isMultiple() {
+        return this.get('multiple');
+    }
+
+    _refreshPosition() {
+        if (this.get('_show')) {
+            this.refs.menu.position();
+        }
+    }
+
     _onClear(e) {
+        if (this.get('disabled')) return;
+        
         e.stopPropagation();
-        this.set('value', '');
+        const clearV = !this._isMultiple()? '':[];
+        this.set('value', clearV);
+        if (!this.get('_show')) {
+            this.trigger('change', clearV);
+        }
     }
 
     _onSelect(value) {
-        if (!this.get('multiple')) {
+        // if we show search input in menu and it supports multiple selections,
+        // then the checkbox will be showed.
+        // We do nothing on select in this case and add value on click confirm button
+        const {searchable, multiple} = this.get();
+        if (searchable && multiple) return;
+
+        if (!this._isMultiple()) {
             this.set('value', value, {async: true});
         } else {
             let values = this.get('value');
@@ -110,9 +161,21 @@ export default class Select extends Intact {
     }
 
     _onChangeShow(c, value) {
+        if (value) {
+            this._oldValue = this.get('value');
+        }
         this.set('_show', value);
         // reset the _activeLabel if show
         this._setActiveLabelSilent(undefined);
+        if (!value) {
+            this._onBlur();
+            if (this.get('searchable') && this.get('multiple')) {
+                // set the _checkedKeys to value
+                this.set('_checkedKeys', this.get('value') || []);
+            }
+        }
+
+        this.trigger(value ? 'show' : 'hide');
     }
 
     /**
@@ -128,32 +191,37 @@ export default class Select extends Intact {
             });
         }
 
-        this.timer = setTimeout(() => {
+        // this.timer = setTimeout(() => {
             if (this.get('keywords') != null) {
                 this._resetSearch();
             }
-        }, 200);
+        // }, 200);
     }
 
     _selectInput(e) {
-        selectInput(e.target); 
+        selectInput(e.target);
     }
 
-    _onFocus(e) {
-        clearTimeout(this.timer);
-    }
+    // _onFocus(e) {
+        // clearTimeout(this.timer);
+    // }
 
     _onFocusout() {
         this.refs.dropdown.hide();
     }
 
     _delete(value, e) {
+        if (this.get('disabled')) return;
+
         e.stopPropagation();
         const values = this.get('value').slice(0);
         const index = values.indexOf(value);
         values.splice(index, 1);
         this.set('value', values);
         this._focusInput();
+        if (!this.get('_show')) {
+            this.trigger('change', values);
+        }
     }
 
     _focusInput() {
@@ -165,19 +233,22 @@ export default class Select extends Intact {
     _position() {
         const menuElement = this.refs.menu.vdt.vNode.children.element;
         const width = this.element.offsetWidth;
-        const menuWidth = menuElement.offsetWidth;
-        if (width > menuWidth) {
-            menuElement.style.width = `${width}px`;
-        }
+        // const menuWidth = menuElement.offsetWidth;
+        // if (width > menuWidth) {
+            // menuElement.style.width = `${width}px`;
+        // }
+        menuElement.style.minWidth = `${width}px`;
     }
 
     _onKeypress(e) {
+        this.trigger('keypress', e);
         if (e.keyCode === 13) {
             this.refs.wrapper.click();
         }
     }
 
     _onKeydown(e) {
+        this.trigger('keydown', e);
         if (e.keyCode === 9) { // tab
             this.refs.dropdown.hide();
         }
@@ -192,11 +263,11 @@ export default class Select extends Intact {
     }
 
     handleProps(props, labelObj) {
-        const {multiple, value, filterable, keywords, filter} = this.get();
+        const {value, filterable, keywords, filter, searchable} = this.get();
         let active = false;
         let valid = false;
 
-        if (!multiple) {
+        if (!this._isMultiple()) {
             if (props.value === value) {
                 // set label
                 labelObj.label = props.label;
@@ -215,12 +286,72 @@ export default class Select extends Intact {
             }
         }
 
-        if (!filterable || filter.call(this, keywords, props)) {
+        if (!filterable && !searchable || filter.call(this, keywords, props)) {
             valid = true;
         }
 
         return {active, valid};
     }
+
+    /**
+     * don't trigger focusout event when layer is showing,
+     * only trigger focusout when it hidden to make FormItem to validate it
+     * #449
+     */
+    _onInputFocusOut(e) {
+        if (this.get('_show')) {
+            e.stopPropagation();
+        }
+    }
+
+    _onHide() {
+        this._triggerChange();
+        dispatchEvent(this.element, 'focusout');
+    }
+
+    _selectAll(allShowedValues) {
+        this.set('_checkedKeys', addKeys(this.get('value'), allShowedValues));
+    }
+
+    _unselectAll(allShowedValues) {
+        this.set('_checkedKeys', removeKeys(this.get('value'), allShowedValues));
+    }
+
+    _toggleSelect(allShowedValues) {
+        const {value, _checkedKeys} = this.get();
+        const checked = [];
+        const unchecked = [];
+        allShowedValues.forEach(item => {
+            if (_checkedKeys.indexOf(item) > -1) {
+                checked.push(item);
+            } else {
+                unchecked.push(item);
+            }
+        });
+
+        this.set('_checkedKeys', removeKeys(addKeys(value, unchecked), checked));
+    }
+
+    _confirm() {
+        this.set('value', this.get('_checkedKeys'));
+        this.hide();
+    }
+
+    _triggerChange() {
+        const {value} = this.get();
+        if (!isEqual(this._oldValue, value)) {
+            this._oldValue = value;
+            this.trigger('change', value);
+        }
+    }
+}
+
+function addKeys(origin, keys) {
+    return Array.from(new Set([...keys, ...(origin || [])]));
+}
+
+function removeKeys(origin, keys) {
+    return (origin || []).filter(item => keys.indexOf(item) < 0);
 }
 
 export {Select, Option, Group as OptionGroup};

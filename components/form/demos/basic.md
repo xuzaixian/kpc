@@ -7,11 +7,13 @@ order: 0
 同时我们可以指定`FormItem`的表单验证规则：
 
 1. 给`FormItem`添加`model`属性，指定需要验证的字段名。如果不指定，则不会进行任何验证
+    > `@since v1.4.0`如果没有指定`model`我们可以直接通过`value`来指定要验证的值
 2. 给`FormItem`添加`rules`属性，指定需要验证的规则。如果不指定，则不会进行任何验证。内置的验证规则如下：
     1. `required {Boolean}`：必须填写
     2. `digits {Boolean}`： 请输入数字
     3. `email {Boolean}`: 请输入正确的邮箱地址
     4. `url {Boolean}`: 请输入正确的网址
+        > 该规则可以验证IP地址，但是会排除`192.168.X.X | 192.254.X.X | 172.16.0.0 - 172.31.255.255 | 10.X.X.X | 172.X.X.X`这类保留IP地址
     5. `date {Boolean}`：请输入正确的日期
     6. `dateISO {Boolean}`：请输入正确的日期（YYYY-MM-DD）
     7. `number {Boolean}`：请输入正确的数
@@ -30,9 +32,32 @@ order: 0
 手动调用`Form`的`validate()`方法来验证，该函数为异步函数，返回`true`或`false`来标示验证是否通过。
 另外，验证失败时，可以通过`Form`的`getFirstInvalidFormItem()`方法来获取第一条出错的`FormItem`
 
-> 验证的字段名必须是当前上下文对象上的直接属性名，在循环中我们必须通过索引来拼接取值路径字符串，
-> 例如：`"users.0.phone"`
-
+> __以下规则仅对使用`model`来指定要验证的属性时才需要关心，建议如下例所示，使用`value`来指定验证的值__
+>
+> 验证的字段名`model`必须是当前上下文对象上的直接属性名，在循环中我们必须通过索引来拼接取值路径字符串，
+> 例如：`"item.0.value"`
+> ```vue
+> // @code
+> <!-- 错误的model定义 -->
+> <FormItem v-for="(item, index) in data"
+>     model="item.value"
+>     :rules="{required: true}" 
+>     :key="index"
+> >
+>     <Input v-model="item.value" />
+> </FormItem>
+> 
+> <!-- 正确的model定义 -->
+> <FormItem v-for="(item, index) in data"
+>     :model="`data.${index}.value`"
+>     :rules="{required: true}" 
+>     :key="index"
+> >
+>     <Input v-model="item.value" />
+> </FormItem>
+> 
+> ```
+>
 > React下，需要往子组件注入当前上下文`_context`，因为`FormItem`需要从当前上下文获取待验证的值，
 > 详见下面`index.jsx`示例文件
 
@@ -184,56 +209,15 @@ data() {
 },
 ```
 
-```jsx
-import React from 'react';
-import {Form, FormItem} from 'kpc/components/form';
-import {Input} from 'kpc/components/input';
-import Message from 'kpc/components/message';
+```react-methods
+// 注入_context上下文
+static childContextTypes = {
+    _context: () => {}
+}
 
-export default class extends React.Component {
-    // *********
-    // 注入_context上下文
-    static childContextTypes = {
-        _context: () => {}
-    }
-
-    getChildContext() {
-        return {
-            _context: this
-        }
-    }
-    // *********
-
-    constructor(props) {
-        super(props);
-        this.state = {model: {}};
-
-        this.submit = this.submit.bind(this);
-        this.onChangeInput = this.onChangeInput.bind(this);
-    }
-
-    submit() {
-        Message.success('验证通过，开始提交');
-        console.log(this.state.model);
-    }
-    
-    onChangeInput(c, v) {
-        this.setState({
-            model: {
-                ...this.state.model,
-                input: v
-            }
-        });
-    }
-
-    render() {
-        return (
-            <Form onSubmit={this.submit} ref={i => this.form = i} labelWidth="200">
-                <FormItem label="Input" model="model.input" rules={{required: true}}>
-                    <Input value={this.state.model.input} on$change-value={this.onChangeInput} />
-                </FormItem>
-            </Form>
-        );
+getChildContext() {
+    return {
+        _context: this
     }
 }
 ```

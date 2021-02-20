@@ -11,7 +11,7 @@ sizes = large small mini
     // line-height s('calc(%s - 2px)', $btn-height)
     padding $btn-padding
     outline none
-    border none
+    // border none
     vertical-align middle
     color $btn-color
     background-color $btn-bg-color
@@ -38,10 +38,24 @@ sizes = large small mini
             &:hover
             &:focus
                 background-color palette(@background-color, -1)
-                border-color palette(@border-color, 1)
+                border-color lookup('$btn-' + type + '-hover-border-color')
             &:active
                 background-color palette(@background-color, 1)
-                border-color palette(@border-color, 1)
+                border-color palette(@border-color, 1) 
+    // secodary type
+    &.k-secondary
+        color $btn-secondary-color
+        border-color $btn-secondary-border-color
+        &:hover
+        &:focus
+            background-color $btn-secondary-hover-bg-color
+        &:active
+            background-color $btn-secondary-active-bg-color
+    &.k-link
+        color $link-color
+        &:hover
+            color $link-hover-color
+
     // disabled
     &.k-disabled
         &, &:hover
@@ -50,11 +64,14 @@ sizes = large small mini
             border-color $btn-disabled-border-color 
             cursor not-allowed
 
-    // none
+    // none & link
     &.k-none
+    &.k-link
         &, &:hover
             border none
             background-color transparent
+        &.k-active
+            color $primary-color
 
     // size
     for size in sizes 
@@ -72,7 +89,7 @@ sizes = large small mini
 
     // icon
     .k-icon
-        font-size inherit
+        // font-size inherit
         vertical-align middle
         line-height s('calc(%s - 2px)', $btn-height)
         // for IE10 and above
@@ -84,7 +101,7 @@ sizes = large small mini
         + span
             margin-left $btn-icon-margin-right 
             // vertical-align middle
-    &.k-icon-right
+    &.k-btn-icon-right
         .k-icon
             margin-left $btn-icon-margin-right 
     &.k-btn-icon
@@ -117,7 +134,7 @@ sizes = large small mini
                     background-color palette(lookup('$btn-' + type + '-bg-color'), -2)
                     color palette(lookup('$btn-' + type + '-color'), -2)
                     border-color palette(lookup('$btn-' + type + '-border-color'), -2)
-        &:not(.k-btn-icon):not(.k-icon-left):not(.k-icon-right)
+        &:not(.k-btn-icon):not(.k-btn-icon-left):not(.k-btn-icon-right)
             padding-left s("calc(%s + 1em)", getLeft($btn-padding))
             .icon-loading
                 margin-left -1em
@@ -137,8 +154,42 @@ sizes = large small mini
         display inline-flex
         align-items center
         justify-content center
-        .k-icon
-            line-height inherit
+        // it will cause icon can not vertical align middle with text 
+        // .k-icon
+        //     line-height inherit
+
+    // ghost
+    &.k-ghost
+        background transparent
+        color $btn-ghost-color
+        &:hover
+        &:active
+            background transparent
+        &:hover
+            color $btn-ghost-hover-color
+        &:active
+            color $primary-color
+        &.k-default
+            border-color $btn-default-ghost-border-color
+            &:hover
+                border-color $btn-default-ghost-hover-border-color
+            &:active
+                border-color $primary-color
+        for type in types
+            &.k-{type}
+                color lookup('$btn-' + type + '-ghost-color')
+                &:hover
+                    color palette(@color, -1)
+                    border-color palette(@color, -1)
+                &:active
+                    color palette(@color, 1) 
+                    border-color palette(@color, 1)
+        // disabled
+        &.k-disabled
+            &, &:hover
+                color $btn-disabled-color 
+                border-color $btn-disabled-ghost-border-color 
+                background-color transparent
 
 // buttons
 .k-btns
@@ -258,4 +309,4 @@ sizes = large small mini
                             border-bottom-color lookup('$btns-' + type + '-border-color')
             
 
-require($theme-dir + '/button.styl')
+requireTheme('button')

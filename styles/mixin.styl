@@ -15,6 +15,13 @@ getRight(args)
         args[1]
     else 
         args
+getBottom(args)
+    if length(args) >= 3
+        args[2]
+    else if length(args) > 1
+        args[0]
+    else
+        args
 
 clearfix()
     zoom 1
@@ -27,7 +34,7 @@ clearfix()
 add(main, args...)
     if unit(main) == 'rem' || unit(main) == 'em'
         for arg in args
-            main = main + unit(arg / 14, rem)
+            main = main + unit(arg / $rem, rem)
     else
         for arg in args
             main = main + unit(arg, px)
@@ -110,3 +117,7 @@ palette(color, level)
         return hsv(h + level, s + level * inS, b - level * inB)
     else
         return color
+
+requireTheme(name)
+    for dir in $theme-dir
+        require(name + '.styl', dir)

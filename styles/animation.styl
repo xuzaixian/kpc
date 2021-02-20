@@ -15,6 +15,7 @@ $origins = {
 for type, value in $origins
     .c-slide{type}-enter
     .c-slide{type}-leave
+    .c-slide{type}-leave-to // for vue
     .c-slide{type}-appear
         transform-origin value 
         opacity 0
@@ -27,27 +28,36 @@ for type, value in $origins
     .c-slide{type}-appear-active
         transform-origin value 
         transition opacity $transition, transform $transition !important
+        pointer-events none
 
 .c-fade-enter
 .c-fade-leave
-    opacity 0
+.c-fade-leave-to
+.c-fade-appear
+    opacity 0 !important
 .c-fade-enter-active
 .c-fade-leave-active
+.c-fade-appear-active
     transition opacity $transition 
 .c-fade-move
     transition transform $transition
+    pointer-events none
 
 .c-expand-enter
 .c-expand-leave
+.c-expand-leave-to
     opacity 0
     overflow hidden
 .c-expand-enter-active
 .c-expand-leave-active
     transition all $transition
     overflow hidden
+.c-expand-move
+    transition transform $transition
 
 .c-dropdown-enter
 .c-dropdown-leave
+.c-dropdown-leave-to
     opacity 0
     transform translateY(-20px)
 .c-dropdown-enter-active

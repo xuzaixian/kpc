@@ -1,14 +1,28 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {mount} from './utils';
+import Intact from 'intact';
+import {mount, unmount, testDemos, wait, nextFrame} from './utils';
 import {matchSnapshot} from 'chai-karma-snapshot';
+import '../styles/kpc.styl';
+import './test.styl';
+import mx from '../components/diagram/mxgraph/mx';
 
 chai.use(matchSnapshot);
 
-const reactReq = require.context('~/components/', true, /demos\/.*index\.jsx$/);
+mx.mxClient.IS_POINTER = false;
+
+const testsContext = require.context('../components/', true, /index\.react\.spec\.js/);
+testsContext.keys().forEach(testsContext);
+
+// const reactReq = require.context('~/components/', true, /demos\/.*index\.jsx$/);
+const reactReq = require.context('~/components/', true, /^((?!(affix|code)).)*\/demos\/.*index\.jsx$/);
 
 describe('React Demos', () => {
     let demo;
+
+    afterEach(() => {
+        unmount(demo);
+    });
 
     function wrap(Demo) {
         return class extends Intact {
@@ -27,16 +41,9 @@ describe('React Demos', () => {
             }
         }
     }
-    reactReq.keys().forEach(item => {
-        const paths = item.split('/');
-        const name = paths[1];
-        const type = paths[3];
-        const Demo = reactReq(item).default;
-
-        it(`${name[0].toUpperCase()}${name.substring(1)} ${type}`, () => {
-            demo = mount(wrap(Demo));
-            console.log(demo.element.innerHTML);
-            expect(demo.element.innerHTML).to.matchSnapshot();
-        });
+    testDemos(reactReq, async (Demo) => {
+        demo = mount(wrap(Demo));
+        await nextFrame();
+        expect(demo.element.innerHTML).to.matchSnapshot();
     });
 });

@@ -1,9 +1,10 @@
 import Tab from './tab';
 import Button from '../button';
+import {getRestProps} from '../utils';
 
 const {
     className, data, value, children,
-    style, vertical, size, type,
+    vertical, size, type,
     _activeBarStyle, _scroll, _left,
     _prev, _next
 } = self.get();
@@ -13,12 +14,12 @@ const classNameObj = {
     [className]: className,
     [`k-${size}`]: size !== 'default',
     'k-vertical': vertical,
-    'k-card': type === 'no-border-card',
-    [`k-${type}`]: type !== 'default',
+    'k-tabs-card': type === 'no-border-card',
+    [`k-tabs-${type}`]: type !== 'default',
     [`k-is-scroll`]: _scroll
 };
 
-<div class={{ classNameObj }} style={{ style }}>
+<div class={{ classNameObj }} {{ ...getRestProps(self) }}>
     <Button class="k-prev" type="none" icon
         v-if={{ _scroll }}
         key="prev" 
@@ -41,12 +42,11 @@ const classNameObj = {
             {{ __u.map(children ? (Array.isArray(children) ? children : [children]) : children, vNode => {
                 if (vNode.tag === Tab) {
                     vNode.props = {...vNode.props, _value: value, _parent: self};
+                    vNode.$ = true;
                 }
                 return vNode;
             }) }}
-            <div class="k-active-bar" v-if={{ type === 'default' }}
-                style={{ _activeBarStyle }}
-            ></div>
+            <div class="k-active-bar" style={{ _activeBarStyle }}></div>
         </div>
     </div>
     <Button class="k-next" type="none" icon

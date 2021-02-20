@@ -3,14 +3,17 @@ import CheckboxDemo from '~/components/tree/demos/checkbox';
 import LoadingDemo from '~/components/tree/demos/loading';
 import CustomDemo from '~/components/tree/demos/custom';
 import FilterableDemo from '~/components/tree/demos/filterable';
-import {mount, unmount} from 'test/utils';
+import SelectDemo from '~/components/tree/demos/select';
+import DraggableDemo from '~/components/tree/demos/draggable';
+import {mount, unmount, dispatchEvent, wait} from 'test/utils';
+import {RANGE} from './constants';
 
 describe('Tree', () => {
     let instance;
 
     afterEach(() => unmount(instance));
 
-    it('expand and shrink', (done) => {
+    it('expand and shrink', async () => {
         instance = mount(BasicDemo);
 
         const element = instance.element;
@@ -20,14 +23,11 @@ describe('Tree', () => {
         expect(element.outerHTML).to.matchSnapshot();
 
         icon1.click();
-        setTimeout(() => {
-            expect(element.outerHTML).to.matchSnapshot();
+        await wait(500);
+        expect(element.outerHTML).to.matchSnapshot();
 
-            icon1.click();
-            expect(element.outerHTML).to.matchSnapshot();
-
-            done();
-        }, 500);
+        icon1.click();
+        expect(element.outerHTML).to.matchSnapshot();
     });
 
     it('checkbox', () => {
@@ -60,7 +60,7 @@ describe('Tree', () => {
         expect(tree.element.outerHTML).to.matchSnapshot();
     });
 
-    it('async load', function(done) {
+    it('async load', async function() {
         this.enableTimeouts(false);
         instance = mount(LoadingDemo);
 
@@ -68,30 +68,32 @@ describe('Tree', () => {
         icon.click();
         expect(instance.element.outerHTML).to.matchSnapshot();
 
+        await wait(500);
+        const [, icon1] = instance.element.querySelectorAll('.k-icon');
+        icon1.click();
+        expect(instance.element.outerHTML).to.matchSnapshot();
+
         // loaded
-        setTimeout(() => {
-            expect(instance.element.outerHTML).to.matchSnapshot();
+        await wait(1500);
+        expect(instance.element.outerHTML).to.matchSnapshot();
 
-            // check
-            const checkbox = instance.element.querySelector('.k-checkbox');
-            checkbox.click();
-            const [, icon1] = instance.element.querySelectorAll('.k-icon');
-            icon1.click();
-            setTimeout(() => {
-                expect(instance.element.outerHTML).to.matchSnapshot();
-
-                done();
-            }, 1500);
-        }, 1500);
+        // check
+        const checkbox = instance.element.querySelector('.k-checkbox');
+        checkbox.click();
+        const [, , icon2] = instance.element.querySelectorAll('.k-icon');
+        icon2.click();
+        await wait(1500);
+        expect(instance.element.outerHTML).to.matchSnapshot();
     });
 
     it('append and remove node', () => {
-        instance = mount(CustomDemo);         
+        instance = mount(CustomDemo);
 
         const element = instance.element;
         const [btn1, btn2] = element.querySelectorAll('.k-btn');
         btn1.click();
         expect(element.outerHTML).to.matchSnapshot();
+        expect(instance.get('data')).to.matchSnapshot();
 
         btn2.click();
         expect(element.outerHTML).to.matchSnapshot();
@@ -106,21 +108,114 @@ describe('Tree', () => {
         checkbox1.click();
         checkbox1.parentNode.querySelector('.k-btn:nth-child(2)').click();
         expect(element.outerHTML).to.matchSnapshot();
+        expect(instance.get('data')).to.matchSnapshot();
     });
 
-    it('filterable', (done) => {
+    it('filterable', async () => {
         instance = mount(FilterableDemo);
 
         instance.set('keywords', 'F');
-        setTimeout(() => {
-            expect(instance.element.outerHTML).to.matchSnapshot();
+        await wait(500);
+        expect(instance.element.outerHTML).to.matchSnapshot();
 
-            instance.set('keywords', '2.1.1');
-            setTimeout(() => {
-                expect(instance.element.outerHTML).to.matchSnapshot();
+        instance.set('keywords', '2.1.1');
+        await wait(500);
+        expect(instance.element.outerHTML).to.matchSnapshot();
+    });
 
-                done();
-            }, 500)
-        }, 500);
+    it('select', () => {
+        instance = mount(SelectDemo);
+
+        expect(instance.refs.tree.getSelectedData().length).to.eql(1);
+        const [, , text1, text2, , disabledText] = instance.element.querySelectorAll('.k-text');
+        text1.click();
+        expect(instance.refs.tree.getSelectedData().length).to.eql(2);
+        text1.click();
+        text2.click();
+        expect(instance.refs.tree.getSelectedData().length).to.eql(0);
+        disabledText.click();
+        expect(instance.refs.tree.getSelectedData().length).to.eql(0);
+
+        // disable select
+        instance.refs.tree.set('selectable', false);
+        text1.click();
+        expect(instance.refs.tree.getSelectedData().length).to.eql(0);
+    });
+
+    it('draggable', function() {
+        this.enableTimeouts(false);
+
+        const onDenyDrag = sinon.spy();
+        const onDenyDrop = sinon.spy();
+        const onDragEnd = sinon.spy();
+        DraggableDemo.prototype._onDenyDrag = onDenyDrag;
+        DraggableDemo.prototype._onDenyDrop = onDenyDrop;
+        DraggableDemo.prototype._onDragEnd = onDragEnd;
+
+        instance = mount(DraggableDemo);
+
+        instance.set('expandedKeys', ['2', '2-1', '1', '1-1']);
+        const element = instance.element;
+
+        // can not drag disabled item
+        const disabled = element.querySelector('.k-disabled .k-label');
+        dispatchEvent(disabled, 'mousedown');
+        dispatchEvent(disabled, 'dragstart');
+        expect(onDenyDrag.callCount).to.eql(1);
+
+        const labels = element.querySelectorAll('.k-label');
+
+        // can not drag not-allowed item
+        const notAllowed = labels[2];
+        dispatchEvent(notAllowed, 'mousedown');
+        dispatchEvent(notAllowed, 'dragstart');
+        expect(onDenyDrag.callCount).to.eql(2);
+
+        // drag insert
+        return dragInsert(labels[6], labels[6]).then(() => {
+            // drag to self will do nothing
+            expect(element.innerHTML).to.matchSnapshot();
+            expect(onDragEnd.callCount).to.eql(0);
+            return dragInsert(labels[6], notAllowed);
+        }).then(() => {
+            // drag to not-allowed item will do nothing
+            expect(element.innerHTML).to.matchSnapshot();
+            expect(onDragEnd.callCount).to.eql(0);
+            return dragInsert(labels[6], disabled);
+        }).then(() => {
+            // drag to disabled item will do nothing
+            expect(element.innerHTML).to.matchSnapshot();
+            expect(onDragEnd.callCount).to.eql(0);
+            return dragInsert(labels[6], labels[5], 'before');
+        }).then(() => {
+            expect(element.innerHTML).to.matchSnapshot();
+            expect(onDragEnd.callCount).to.eql(1);
+            expect(instance.get('data')).to.matchSnapshot();
+            return dragInsert(labels[6], labels[5], 'after');
+        }).then(() => {
+            expect(element.innerHTML).to.matchSnapshot();
+            expect(instance.get('data')).to.matchSnapshot();
+            return dragInsert(labels[6], labels[5]);
+        }).then(() => {
+            expect(element.innerHTML).to.matchSnapshot();
+            expect(instance.get('data')).to.matchSnapshot();
+        });
     });
 });
+
+async function dragInsert(srcElement, toElement, mode) {
+    dispatchEvent(srcElement, 'mousedown');
+    dispatchEvent(srcElement, 'dragstart', {dataTransfer: new DataTransfer()});
+    const {top, bottom, height} = toElement.getBoundingClientRect();
+    const des = height * RANGE;
+    if (mode === 'before') {
+        dispatchEvent(toElement, 'dragover', {clientY: top + des - 1});
+    } else if (mode === 'after') {
+        dispatchEvent(toElement, 'dragover', {clientY: bottom - des + 1});
+    } else {
+        dispatchEvent(toElement, 'dragover', {clientY: top + des + 1});
+    }
+
+    await wait(700);
+    dispatchEvent(toElement, 'dragend');
+}

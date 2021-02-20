@@ -1,20 +1,22 @@
 import Button from '../button';
+import {getRestProps} from '../utils';
 
 const {
     value, children, _value, className,
-    disabled, _parent, closable,
+    disabled, _parent, closable
 } = self.get();
 
-<a 
+<div 
     class={{ {
         'k-tab': true, 
         'k-active': value !== undefined && value === _value, 
         [className]: className,
         'k-disabled': disabled,
     } }}
+    {{ ...getRestProps(self) }}
     ev-click={{ self._changeTab }}
 >
-    {{ self.get('children') }}
+    {{ children }}
     <Button type="none"
         icon
         disabled={{ disabled }} 
@@ -25,4 +27,4 @@ const {
     >
         <i class="k-icon ion-ios-close-empty" />
     </Button>
-</a>
+</div>

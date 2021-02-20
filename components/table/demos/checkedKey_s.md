@@ -1,6 +1,6 @@
 ---
 title: 行选中
-order: 3
+order: 4
 ---
 
 通过`checkedKey`（radio类型）或者`checkedKeys`（checkbox类型）来控制哪些列被选中，默认他们的取值
@@ -42,12 +42,11 @@ import Table from 'kpc/components/table';
 .no-data-template
     display: flex
     margin-bottom: 20px
-    .k-table-wrapper
+    .k-table
         margin-left: 20px
 ```
 
 ```js
-
 export default class extends Intact {
     @Intact.template()
     static template = template;
@@ -65,8 +64,3 @@ export default class extends Intact {
     }
 }
 ```
-
-
-
-
-

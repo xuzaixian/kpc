@@ -1,9 +1,9 @@
 import Item from './item';
-import {mapChildren, isStringOrNumberNotEmpty} from '../utils';
+import {mapChildren, isStringOrNumberNotEmpty, getRestProps} from '../utils';
 
 const {
-    children, className, style, collapse, dot,
-    theme, type, size, _isSubMenu, _root, _parent,
+    children, className, collapse, dot,
+    theme, type, size, _isSubMenu, _root, _parent
 } = self.get();
 
 const classNameObj = {
@@ -17,13 +17,15 @@ const classNameObj = {
 
 const _children = mapChildren(children, vNode => {
     if (vNode.tag === Item) {
-        return h(Item, {
+        vNode = _Vdt.miss.clone(vNode, null, true);
+        vNode.props = {
             dot: dot,
             ...vNode.props, 
             _root: _root || self,
             _isFirstFloorChildren: !_root,
             _parentItem: _parent,
-        });
+            _parentMenu: self,
+        };
     }
     return vNode;
 });
@@ -44,8 +46,8 @@ const header = (
 
 <template>
     <div v-if={{ !self._isDropdownMenu() }}
+        {{ ...getRestProps(self) }}
         class={{ classNameObj }}
-        style={{ style }}
     >{{ header }}{{ _children }}</div>
     <t:parent v-else>
         <b:children>{{ header }}{{ _children }}</b:children>

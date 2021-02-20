@@ -1,9 +1,9 @@
 ---
 title: 整行选中
-order: 4
+order: 6
 ---
 
-当行可选时，默认点击该行的任意区域都可选中或取消选中，但我们可以通过将`rowCheckbable`设为`false`
+当行可选时，默认点击该行的任意区域都可选中或取消选中，但我们可以通过将`rowCheckable`设为`false`
 来关闭这一特性。
 
 > 选中的数据默认会在每一行的元素上有`k-checked`样式名
@@ -23,7 +23,7 @@ import Table from 'kpc/components/table';
 ```
 
 ```styl
-.k-table-wrapper
+.k-table
     margin-bottom 20px
     .k-checked
         background-color #f4f8fb

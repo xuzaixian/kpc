@@ -4,7 +4,8 @@ import template from './index.vdt';
 import './index.styl';
 import 'kpc/components/table/index.styl';
 
-const req = require.context('~/', true, /^\.\/(components|docs)\/.*index\.(json|js)$/);
+// export const req = require.context('~/', true, /^\.\/(components|docs)\/.*index\.js$/, 'lazy');
+export const req = require.context('~/', true, /^\.\/(components|docs)\/.*index\.js$/);
 
 export default class extends Layout {
     @Intact.template()
@@ -22,7 +23,7 @@ export default class extends Layout {
         super._init();
 
         let path = this.get('path').replace('index.html', '').replace('\\', '/');
-        path = path.slice(0, -1).replace(process.URL_PREFIX, '');
+        path = path.slice(0, -1);// .replace(process.URL_PREFIX, '');
 
         this.path = path;
 
@@ -45,10 +46,8 @@ export default class extends Layout {
         if (this.refs.article) {
             this.set('demos', this.refs.article.get('demos'));
         }
-        
-        window.addEventListener('scroll', this._onScroll);
 
-        window.scrollTo(0, 0);
+        window.addEventListener('scroll', this._onScroll);
     }
 
     _onScroll() {
@@ -84,7 +83,7 @@ export default class extends Layout {
 
     _scrollToView(demo) {
         const index = demo.data.index;
-        const dom = this.element.querySelector(`.index-${index}`);
+        const dom = this.element.querySelector(`#${index}`);
         const top = dom.getBoundingClientRect().top + window.pageYOffset;
         window.scrollTo(0, top - 87);
     }
