@@ -1,54 +1,63 @@
+import {Icon} from '../icon';
+import {getRestProps} from '../utils';
+import {makeStyles} from './styles';
+
 const {
-    type, className, percent, status, size,
-    isOuterText, isInnerText, ref, key, strokeWidth,
-    children, ...rest
-} = self.get();
+    type, className, percent, size,
+    showOuterText, showInnerText, strokeWidth, 
+    children
+} = this.get();
+
+const { k } = this.config;
+const status = this.status.value;
+const background = this.color.value || '';
 
 const classNameObj = {
-    'k-progress' : true,
-    [`k-${type}`]: type,
+    [`${k}-progress`] : true,
+    [`${k}-${type}`]: type,
     [className]: className,
-    [`k-${status}`]: status !== 'normal',
-    [`k-${size}`]: size !== 'default',
+    [`${k}-${status}`]: status !== 'normal',
+    [`${k}-${size}`]: size !== 'default',
+    [makeStyles(k)]: true,
 }
 
-<div class={{ classNameObj }} {{ ...rest }}>
-    <div class="k-container" v-if={{ type === 'bar' }}>
-        <div  class="k-content">
-            <div class="k-bg" style={{ {width: percent + '%'} }}>
-                <div class="k-inner-text" v-if={{ isInnerText }}>
-                    {{ percent }} %
+<div class={classNameObj} {...getRestProps(this)}>
+    <div class={`${k}-progress-container`} v-if={type === 'bar'}>
+        <div class={`${k}-progress-content`}>
+            <div class={`${k}-progress-bg`} style={{width: percent + '%', background}}>
+                <div class={`${k}-progress-inner-text`} v-if={showInnerText}>
+                    {percent} %
                 </div>
             </div>
         </div>
     </div>
-    <svg class="k-canvas" viewBox="0 0 120 120" v-if={{ type === 'circle' }}>
-        {{ do {
+    <svg class={`${k}-progress-canvas`} viewBox="0 0 120 120" v-if={type === 'circle'}>
+        { do {
             const r = (120 - strokeWidth) / 2;
             const circumference = 2 * Math.PI * r;
 
             [
-                <circle class="k-meter" cx="60" cy="60" r={{ r }}
-                    stroke-width={{ strokeWidth }}
+                <circle class={`${k}-progress-meter`} cx="60" cy="60" r={r}
+                    stroke-width={strokeWidth}
                 />,
-                <circle class="k-value" cx="60" cy="60" r={{ r }}
-                    stroke-dashoffset={{ circumference * (1 - percent / 100) }}
-                    stroke-dasharray={{ circumference }}
-                    stroke-width={{ strokeWidth }}
+                <circle class={`${k}-progress-value`} cx="60" cy="60" r={r}
+                    stroke-dashoffset={circumference * (1 - percent / 100)}
+                    stroke-dasharray={circumference}
+                    stroke-width={strokeWidth}
                 />,
-                <circle class="k-animate" cx="60" cy="60" r={{ r }}
-                    stroke-width={{ strokeWidth }}
-                    stroke-dasharray={{ circumference }}
-                    stroke-dashoffset={{ circumference }}
-                    v-if={{ status === 'active' }}
+                <circle class={`${k}-progress-animate`} cx="60" cy="60" r={r}
+                    stroke-width={strokeWidth}
+                    stroke-dasharray={circumference}
+                    stroke-dashoffset={circumference}
+                    v-if={status === 'active'}
                 >
                     <animate
                         attributeName="stroke-dashoffset"
                         begin="0s"
                         dur="2s"
                         repeatCount="indefinite"
-                        from={{circumference}}
-                        to={{ circumference * (1 - percent / 100)}}
+                        from={circumference}
+                        to={circumference * (1 - percent / 100)}
                     ></animate>
                     <animate attributeName="opacity"
                         begin="0s"
@@ -59,16 +68,45 @@ const classNameObj = {
                     ></animate>
                 </circle>
             ]
-        } }}
+        } }
     </svg>
-    <div class="k-text" v-if={{ children }}>{{ children }}</div>
-    <div class="k-text" v-else-if={{ isOuterText }}>
-        <span v-if={{ status !== 'success' && status !== 'error' }}>{{ percent }}%</span>
-        <span v-else-if={{ status === 'success' }}>
-            <i class="k-icon ion-ios-checkmark-outline"></i>
-        </span>
-        <span v-else-if={{ status === 'error' }}>
-            <i class="k-icon ion-ios-close-outline"></i>
-        </span>
+    <div class={`${k}-progress-text`} v-if={children}>{children}</div>
+    <div class={`${k}-progress-text`} v-else-if={showOuterText}>
+        { do {
+            let icon;
+            if (type !== 'circle') {
+                switch (status) {
+                    case 'success':
+                        icon = [`${k}-icon-success-fill`];
+                        break;
+                    case 'error':
+                        icon = [`${k}-icon-error-fill`];
+                        break;
+                    case 'warning':
+                        icon = [`${k}-icon-warning-fill`];
+                        break;
+                    default:
+                        break;
+                }
+            } else {
+                switch (status) {
+                    case 'success':
+                        icon = [`${k}-icon-check`];
+                        break;
+                    case 'error':
+                    case 'warning':
+                        icon = [`${k}-icon-close`];
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (icon) {
+                <Icon class={{[`${k}-progress-icon`]: true, [icon]: true}} color={status === 'error' ? 'danger' : status} />
+            } else {
+                <span>{percent}%</span>
+            }
+        } } 
     </div>
 </div>

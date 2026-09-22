@@ -1,0 +1,43 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Node.js CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    # runs-on: ubuntu-latest
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: yarn global add codecov
+    - run: yarn --immutable
+    # - run: yarn lerna exec -- "yarn --immutable"
+    - run: cd ./packages/kpc-react && yarn --immutable && cd ../../
+    - run: cd ./packages/kpc-vue && yarn --immutable && cd ../../
+    - run: cd ./packages/kpc-vue-next && yarn --immutable && cd ../../
+    - run: yarn gulp doc:prepare
+    - run: yarn build
+    # - run: yarn test:all
+    - run: npx lerna exec --scope @king-design/intact -- npm run test
+    - run: npx lerna exec --scope @king-design/react -- npm run test 
+    - run: npx lerna exec --scope @king-design/vue-legacy -- npm run test 
+    - run: npx lerna exec --scope @king-design/vue -- npm run test 
+    - run: codecov
+      env: 
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

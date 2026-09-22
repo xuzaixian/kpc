@@ -7,10 +7,39 @@ order: 3
 作为方法的参数，如果方法返回“真”则禁用掉该日期，否则不禁用。
 
 ```vdt
-import Datepicker from 'kpc/components/datepicker';
+import {Datepicker} from 'kpc';
 
-<Datepicker disabledDate={{ (date) => {
-    // 禁用掉2018-02-05和2018-03-05
-    return ~['2018-02-05', '2018-03-05'].indexOf(date);
-} }} />
+<div>
+    <Datepicker disabledDate={this.disabledDate} />
+    <br /><br />
+    <Datepicker disabledDate={this.disabledMonth} type='month' />
+    <br /><br />
+    <Datepicker disabledDate={this.disabledYear} type='year' max="2025" />
+</div>
+```
+
+```ts
+import {Dayjs} from 'dayjs';
+
+export default class extends Component {
+    static template = template;
+
+    disabledDate(date: Dayjs) {
+        // 禁用掉每月的5号和15号
+        const d = date.date();
+        return d === 5 || d === 15;
+    }
+
+    disabledMonth(date: Dayjs) {
+        // 禁用掉每年的5月
+        const m = date.month() + 1;
+        return m === 5;
+    }
+
+    disabledYear(date: Dayjs) {
+        // 禁用掉2015年
+        const y = date.year();
+        return y === 2015;
+    }
+}
 ```

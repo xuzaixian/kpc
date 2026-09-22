@@ -9,23 +9,31 @@ order: 0
 2. `label`展示的文案
 3. `children`如果存在子选项，需要递归地指定该属性
 4. `disabled`禁用该项
+5. `loaded` 子选项已经加载完成，当节点做异步加载时，将不会对该节点调用`load`方法，详见“动态加载数据”
 
 ```vdt
-import Cascader from 'kpc/components/cascader';
+import {Cascader} from 'kpc';
 
 <div>
-    <Cascader data={{ self.get('data') }} v-model="value" />
-    You selected: {{ JSON.stringify(self.get('value')) }}
+    <Cascader data={this.get('data')} v-model="value" />
+    You selected: {JSON.stringify(this.get('value'))}
+    <br />
+    <br />
+    <Cascader loading />
 </div>
 ```
 
-```js
-export default class extends Intact {
-    @Intact.template()
+```ts
+interface Props {
+    value?: string[] | null
+}
+
+export default class extends Component<Props> {
     static template = template;
 
-    defaults() {
+    static defaults() {
         return {
+            value: null as string[] | null,
             data: [
                 {
                     value: 'beijing',

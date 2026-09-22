@@ -1,36 +1,49 @@
-/* import {expandAnimationCallbacks} from '../utils'; */
-import VShow from '../menu/vShow';
+import {Transition} from 'intact';
+import {expandAnimationCallbacks, getRestProps} from '../utils';
+import {makeItemStyles} from './styles';
+import {Icon} from '../icon';
 
 const {
-    className, style, value, children,
-    title, _parent, disabled,
-} = self.get();
+    children, title, value,
+    className, disabled
+} = this.get();
 
-const active = _parent._isActive(value);
+const isActive = this.collapse.isActive(value);
+const { k } = this.config;
+
 const classNameObj = {
-    'k-collapse-item': true,
+    [`${k}-collapse-item`]: true,
+    [makeItemStyles(k)]: true,
     [className]: className,
-    'k-active': active,
-    'k-disabled': disabled,
+    [`${k}-active`]: isActive,
+    [`${k}-disabled`]: disabled
 };
 
-<div class={{ classNameObj }} style={{ style }}>
-    <div class="k-title" ev-click={{ self._toggle }}>
-        <b:title>{{ title }}</b:title>
-        <i class="k-arrow ion-ios-arrow-right"></i>
+<div class={classNameObj} {...getRestProps(this)}>
+    <div class={`${k}-collapse-title`} ev-click={this.toggle}>
+        <div class={`${k}-collapse-title-wrapper`}><b:title>{title}</b:title></div>
+        <Icon
+            class={{[`${k}-collapse-arrow`]: true, [`${k}-icon-right`]: true}}
+            hoverable
+            disabled={disabled}
+        ></Icon>
     </div>
-    <VShow show={{ active }} class="k-content"
-        ev-show={{ self._onShow }}
-        ev-hide={{ self._onHide }}
+    <Transition
+        show={isActive}
+        {...expandAnimationCallbacks}
+        onEnter={
+            el => {
+                expandAnimationCallbacks.onEnter(el);
+                this.onEnter();
+            }
+        }
+        onAfterLeave={
+            el => {
+                expandAnimationCallbacks.onAfterLeave(el);
+                this.onAfterLeave();
+            }
+        }
     >
-        <div class="k-wrapper">{{ children }}</div>
-    </VShow>
-    {{/* <Animate class="k-content"
-        v-if={{ active }}
-        ev-$mounted={{ self._onShow }}
-        ev-$destroyed={{ self._onHide }}
-        {{ ...expandAnimationCallbacks }}
-    >
-        <div class="k-wrapper">{{ children }}</div>
-    </Animate> */}}
+        <div class={`${k}-collapse-wrapper`}>{children}</div>
+    </Transition>
 </div>

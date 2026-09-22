@@ -7,20 +7,28 @@ order: 6
 自定义的搜索逻辑，组件会将当前的搜索关键词和每一项数据作为参数传入
 
 ```vdt
-import Cascader from 'kpc/components/cascader';
+import {Cascader} from 'kpc';
 
 <div>
-    <Cascader data={{ self.get('data') }} filterable />
+    <Cascader data={this.get('data')} v-model="value" filterable />
+    <br /><br />
+    <Cascader data={this.get('data')} v-model="values" filterable multiple />
 </div>
 ```
 
-```js
-export default class extends Intact {
-    @Intact.template()
+```ts
+interface Props {
+    value?: string[] | null
+    values?: string[][] | null
+}
+
+export default class extends Component<Props> {
     static template = template;
 
-    defaults() {
+    static defaults() {
         return {
+            value: [] as string[],
+            values: [] as string[][],
             data: [
                 {
                     value: 'beijing',

@@ -1,28 +1,50 @@
-import Button from '../button';
+import {Button} from '../button';
+import {Icon} from '../icon';
+import {getRestProps} from '../utils';
+import {makeMessageStyles} from './styles';
 
-const {type, content, children, closable, hideIcon} = self.get();
+const {type, content, children, closable, hideIcon, classNamePrefix} = this.get();
+const { k } = this.config;
 
-<div class={{ {"k-message": true, [`k-${type}`]: type !== 'info'} }}
-    ev-mouseenter={{ self.onMouseEnter }}
-    ev-mouseleave={{ self.onMouseLeave }}
+const classNameObj = {
+    [`${k}-message`]: true,
+    [`${k}-${type}`]: type,
+    [makeMessageStyles(k)]: true,
+};
+
+const iconMap = {
+    info: 'information-fill',
+    warning: 'warning-fill',
+    success: 'success-fill',
+    error: 'error-fill',
+};
+
+<div {...getRestProps(this)}
+    class={classNameObj}
+    ev-mouseenter={this.delayClose.onMouseEnter}
+    ev-mouseleave={this.delayClose.onMouseLeave}
 >
-    <div class="k-container">
-        <i v-if={{ !hideIcon }} class={{ {
-            "k-icon": true,
-            "ion-ios-information-outline": type === 'info' || type === 'warning',
-            "ion-ios-checkmark-outline": type === 'success',
-            "ion-ios-close-outline": type === 'danger'
-        } }}></i>
-        <div v-if={{ typeof content === 'string' || typeof content === 'number' }}
-            class="k-content" innerHTML={{ content }}
-        ></div>
-        <div v-else class="k-content">{{ children }}</div>
+    <div class={`${k}-message-container`}>
+        <div class={{[`${k}-message-wrapper`]: true, [`${k}-with-icon`]: !hideIcon}}>
+            <Icon v-if={!hideIcon} 
+                class={{
+                    [`${k}-icon-${iconMap[type] || iconMap.info}`]: true,
+                    [`${k}-message-icon`]: true,
+                }}
+            />
+            <div v-if={typeof content === 'string' || typeof content === 'number'}
+                class={`${k}-message-content`} innerHTML={content}
+            ></div>
+            <div v-else class={`${k}-message-content`}>{children}</div>
+        </div>
         <Button 
-            v-if={{ closable }}
-            type="none" icon class="k-close"
-            ev-click={{ self.close }}
+            v-if={closable}
+            type="none"
+            icon
+            class={`${k}-message-close`}
+            ev-click={this.close}
         >
-            <i class="k-icon ion-ios-close-empty"></i>
+            <Icon class={`${k}-icon-close`} hoverable />
         </Button>
     </div>
 </div>

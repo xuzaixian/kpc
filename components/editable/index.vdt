@@ -1,31 +1,52 @@
-import Input from '../input';
+import {getRestProps} from '../utils';
+import {Input} from '../input';
+import {Icon} from '../icon';
+import {makeStyles} from './styles';
+import { Tooltip } from '../tooltip';
+import {isNullOrUndefined} from 'intact-shared';
 
 const {
-    editing, value, validate,
-    disabled, style, tip,
-    children, invalid, className,
-} = self.get();
+    children, className, editing, 
+    value, validate, disabled, 
+    tip, invalid, rows
+} = this.get();
+const { k } = this.config;
 
 const classNameObj = {
-    'k-editable': true,
-    'k-editing': editing,
-    'k-disabled': disabled,
-    'k-invalid': invalid,
+    [`${k}-editable`]: true,
+    [`${k}-editing`]: editing,
+    [`${k}-disabled`]: disabled,
+    [`${k}-invalid`]: invalid,
     [className]: className,
+    [makeStyles(k)]: true
+};
+const isTextArea = !isNullOrUndefined(rows) && rows != '1';
+
+const inputProps = {
+    autoWidth: !isTextArea,
+    fluid: isTextArea,
+    ...(isTextArea && { type: 'textarea' }),
+    rows,
+    ...((!isTextArea || rows === 'auto') && {size: 'mini'})
 };
 
-<div class={{ classNameObj }} style={{ style }}>
-    <i class="ion-edit k-edit" title={{ tip }}
-        v-if={{ !disabled && !editing }}
-        ev-click={{ self._edit }}
-    ></i>
+<div {...getRestProps(this)} class={classNameObj}>
     <div class="c-ellipsis">
-        {{ !editing ? children :
-            <Input size="small" defaultValue={{ value }} 
-                ev-blur={{ self._onBlur }}
-                ev-keydown={{ self._onKeydown }}
-                ref="input"
-            />
-        }}
+        <template v-if={!editing}>{children}</template>
+        <Input v-else
+            defaultValue={value}
+            ev-blur={this.onBlur}
+            ev-keydown={this.onKeydown}
+            ref={this.inputRef}
+            frozenOnInput
+            ev-$mounted={this.select}
+            {...inputProps}
+        />
     </div>
+    <Tooltip v-if={!disabled && !editing} content={tip}>
+        <Icon class={`${k}-icon-edit ${k}-editable-icon`}
+            ev-click={this.edit}
+            hoverable
+        />
+    </Tooltip>
 </div>

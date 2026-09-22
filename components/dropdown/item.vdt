@@ -1,20 +1,24 @@
-/* import {proxyEvent} from '../utils'; */
-import {Checkbox} from '../checkbox';
-import {Radio} from '../radio';
+import {getRestProps} from '../utils';
+import {makeItemStyles} from './styles';
 
-const {children, disabled, className, _isFocus, style} = self.get();
+const {
+    children, disabled, className, hideOnSelect,
+
+    _isFocus,
+} = this.get();
+const { k } = this.config;
 
 const classNameObj = {
-    'k-item': true,
-    'k-disabled': disabled,
+    [`${k}-dropdown-item`]: true,
+    [`${k}-disabled`]: disabled,
     [className]: className,
-    'k-hover': _isFocus,
-    'k-no-padding': children && (children.tag === Checkbox || children.tag === Radio),
+    [`${k}-hover`]: this.keyboard.isFocus.value,
+    [makeItemStyles(k)]: true,
 }
 
-<div class={{ classNameObj }}
-    ev-click={{ self._onClick }}
-    ev-mouseenter={{ self._onMouseEnter }}
-    ev-mouseleave={{ self._onMouseLeave }}
-    style={{ style }}
->{{ children }}</div>
+<div {...getRestProps(this)}
+    class={classNameObj}
+    ev-click={this.onClick}
+    ev-mouseenter={this.keyboard.onMouseEnter}
+    ev-mouseleave={this.keyboard.onMouseLeave}
+>{children}</div>

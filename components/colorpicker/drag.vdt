@@ -1,0 +1,5 @@
+const { k } = this.config;
+
+<div class={`${k}-colorpicker-drag ${k}-colorpicker-text`}
+    ev-mousedown={this.drag.start}
+>{this.get('children')}</div>

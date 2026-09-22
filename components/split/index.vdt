@@ -1,0 +1,49 @@
+import {makeStyles, kls} from './styles';
+import { MemoBlock } from './memo';
+import { getRestProps } from '../utils';
+
+const {mode} = this.get();
+const {firstSize, lastSize, className} = this.size;
+const {firstRef, lastRef, elementRef, start, dragging} = this.drag;
+const { k } = this.config;
+const classNameObj = {
+    [`${k}-split`]: true,
+    [`${k}-${mode}`]: true,
+    [makeStyles(k)]: true,
+    [[`${k}-first-auto`]]: firstSize.value === 'auto',
+    [[`${k}-last-auto`]]: lastSize.value === 'auto',
+    [[`${k}-resizing`]]: dragging.value,
+    [className]: className,
+};
+
+const stylePropName = mode === 'horizontal' ? 'width' : 'height';
+
+<div class={classNameObj} ref={elementRef} {...getRestProps(this)}>
+    <div class={kls('first', k)}
+        ref={firstRef}
+        style={{[stylePropName]: firstSize.value}}
+    >
+        <MemoBlock block={$blocks.first}>
+            <template>
+                <b:first />
+            </template>
+        </MemoBlock>
+    </div>
+    <div class={kls('line-wrapper', k)} ev-mousedown={start}>
+        <b:drag>
+            <div class={kls('line', k)}>
+                <div class={kls('drag-lines', k)}></div>
+            </div>
+        </b:drag>
+    </div>
+    <div class={kls('last', k)}
+        style={{[stylePropName]: lastSize.value}}
+        ref={lastRef}
+    >
+        <MemoBlock block={$blocks.last}>
+            <template>
+                <b:last />
+            </template>
+        </MemoBlock>
+    </div>
+</div>

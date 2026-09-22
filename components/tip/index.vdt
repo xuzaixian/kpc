@@ -1,10 +1,70 @@
-const {children} = self.get();
+import {Button} from '../button';
+import {Icon} from '../icon';
+import {makeStyles} from './styles';
 
-<t:parent class="k-component-tip">
+const {children, closable, type, disabled, showIcon} = this.get();
+const { k } = this.config;
+
+const iconMap = {
+    default: 'information-fill',
+    info: 'information-fill',
+    warning: 'warning-fill',
+    success: 'success-fill',
+    error: 'error-fill',
+};
+
+const classNameObj = {
+    [`${k}-tip`]: true,
+    [makeStyles(k)]: true,
+};
+
+const iconWrapper = <template>
+    <template v-if={!$blocks.icon}>
+        <Icon class={{
+            [`${k}-icon-${iconMap[type] || iconMap.info}`]: true,
+            [`${k}-tip-icon`]: true,
+        }} />
+    </template>
+    <b:icon v-else />
+</template>
+
+<t:super class={classNameObj} name="k-fade">
     <b:body>
-        <div v-if={{ blocks.title }} class="k-title">
-            <b:title />
+        <div class={{
+            [`${k}-tip-wrapper`]: true,
+            [`${k}-with-icon`]: !$blocks.title && (showIcon || $blocks.icon)
+        }}>
+            <template v-if={!$blocks.title && (showIcon || $blocks.icon)}>
+                {iconWrapper}
+            </template>
+            <div v-if={$blocks.title} class={{
+                [`${k}-tip-title`]: true,
+                [`${k}-with-icon`]: showIcon
+            }}>
+                <template v-if={showIcon}>
+                    {iconWrapper}
+                </template>
+                <span class={`${k}-title-content`}><b:title /></span>
+            </div>
+            <div class={`${k}-tip-content`}>
+                {children}
+            </div>
         </div>
-        {{ children }}
-    </b:body>
-</t:parent>
+    </b:body> 
+    <b:_close>
+        <Button v-if={closable}
+            type={!$blocks.close ? 'none' : 'link'}
+            icon={!$blocks.close}
+            ev-click={this.onClose}
+            class={`${k}-tip-close`}
+        >
+            <template>
+                <b:close>
+                    <Icon class={`${k}-icon-close`}
+                        hoverable={!disabled}
+                    />
+                </b:close>
+            </template>
+        </Button>
+    </b:_close>
+</t:super>

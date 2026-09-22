@@ -1,0 +1,43 @@
+import {Icon} from '../icon';
+import {Button} from '../button';
+import {makeAlertStyles} from './styles';
+
+const {
+    type, content, hideIcon, 
+    hideFooter, hideClose, title,
+    iconClassName, icon
+} = this.get();
+const { k } = this.config;
+
+const classNameObj = {
+    [`${k}-alert-dialog`]: true,
+    [`${k}-${type}`]: true,
+    [`${k}-with-title`]: title,
+    [makeAlertStyles(k)]: true,
+};
+
+<t:super class={classNameObj}>
+    <b:header />
+    <b:body>
+        <div class={`${k}-dialog-tip-icon`}>
+            <Icon 
+                v-if={!hideIcon && !icon}
+                class={iconClassName || {
+                    [`${k}-icon-success-fill`]: type === 'success',
+                    [`${k}-icon-warning-fill`]: type === 'warning' || type === 'confirm',
+                    [`${k}-icon-error-fill`]: type === 'error',
+                }}
+                color={type === 'error' ? 'danger' : type === 'confirm' ? 'warning' : type}
+            />
+            {icon}
+        </div>
+        <div class={`${k}-alert-dialog-wrapper`}>
+            <div class={`${k}-alert-dialog-title`} v-if={title}>{title}</div>
+            {content}
+        </div>
+    </b:body>
+    <b:footer>
+        <template v-if={hideFooter}></template>
+        <template v-else>{$super()}</template>
+    </b:footer>
+</t:super>

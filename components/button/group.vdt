@@ -1,31 +1,16 @@
-import Button from './';
+import {getRestProps} from '../utils';
+import {makeButtonGroupStyles} from './styles';
 
-const {
-    className, vertical, style, 
-    children, value, fluid, checkType
-} = self.get();
+const {className, vertical, children, fluid, seperate, separate} = this.get();
+const {k} = this.config;
 
 const classNameObj = {
-    'k-btns': true,
-    'k-vertical': vertical,
+    [`${k}-btns`]: true,
+    [`${k}-vertical`]: vertical,
+    [`${k}-fluid`]: fluid,
+    [`${k}-separate`]: typeof separate === 'boolean' ? separate : separate,
     [className]: className,
-    'k-fluid': fluid,
+    [makeButtonGroupStyles(k)]: true,
 };
 
-<div class={{ classNameObj }} style={{ style }}>{{ 
-    checkType !== 'none' ? __u.map(
-        children ? 
-            (Array.isArray(children) ? children : [children]) :
-            children, 
-        vNode => {
-            if (vNode.tag === Button) {
-                vNode.props = {
-                    ...vNode.props, 
-                    _value: value,
-                    _checkType: checkType,
-                }
-            }
-            return vNode;
-        }) : 
-        children
-}}</div>
+<div class={classNameObj} {...getRestProps(this)}>{children}</div>

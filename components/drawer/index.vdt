@@ -1,10 +1,34 @@
-<t:parent class={{ {'k-drawer': true, [`k-${self.get('placement')}`]: true} }} >
-    <b:overlay>
-        <Animate class="k-overlay" v-if={{ self.get('overlay') ? self.get('value') : false }} key="overlay"></Animate>
-    </b:overlay>
-    <b:content>
-        <div class='k-drawer-content'>
-            {{ parent() }}
+import {makeStyles} from './styles';
+
+const {placement, overlay, resizable, width} = this.get();
+const {
+    getResizeBarPosition, getHeightResizeBarPosition, 
+    drawerWidth, isResizing, drawerHeight, startWidth, startHeight
+} = this._resizable;
+const shouldShowHeightResizeBar = !!(resizable && (placement === 'top' || placement === 'bottom'))
+
+const { k } = this.config;
+const classNameObj = {
+    [`${k}-drawer`]: true,
+    [`${k}-${placement}`]: true,
+    [makeStyles(overlay, k)]: true
+};
+
+<t:super class={classNameObj} width={resizable ? (drawerWidth.value || width) : width}>
+    <b:_content>
+        <div 
+            class={`${k}-drawer-content ${isResizing.value ? `${k}-drawer-resizing` : ''}`}
+            style={drawerHeight.value ? { height: `${drawerHeight.value}px` } : null}
+        >
+            {$super()}
+            <div v-if={!!resizable}
+                class={`${k}-drawer-resize ${k}-drawer-resize-${getResizeBarPosition()}`}
+                ev-mousedown={startWidth}
+            />
+            <div v-if={shouldShowHeightResizeBar}
+                class={`${k}-drawer-resize-horizontal ${k}-drawer-resize-${getHeightResizeBarPosition()}`}
+                ev-mousedown={startHeight}
+            />
         </div>
-    </b:content>
-</t:parent>
+    </b:_content>
+</t:super>

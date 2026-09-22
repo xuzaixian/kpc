@@ -1,0 +1,26 @@
+import {Icon} from '../icon';
+import {Ellipsis} from '../ellipsis';
+import {getRestProps, findChildren, isComponentVNode} from '../utils';
+import {makeTitleStyles} from './styles';
+
+const rootMenu = this.rootMenu;
+const {collapse} = rootMenu.get();
+const {children, className} = this.get();
+const { k } = this.config;
+
+const classNameObj = {
+    [`${k}-menu-title`]: true,
+    [className]: className,
+};
+
+<div class={classNameObj} {...getRestProps(this)}>
+    <div class={{
+        [`${k}-menu-name`]: true,
+        [makeTitleStyles(k)]: true
+    }}>
+        <Ellipsis position="bottom" v-if={!collapse}>{children}</Ellipsis>
+        <template v-else>
+            {findChildren(children, vNode => isComponentVNode(vNode, Icon))}
+        </template>
+    </div>
+</div>

@@ -1,8 +1,20 @@
-const {children, label, _card, className} = self.get();
+import {makeGroupStyles} from './styles';
+import {getRestProps} from '../utils';
+import { VirtualList } from '../virtualList';
 
-<div class={{ {"k-group": true, [className]: className} }}>
-    <div class="k-label" v-if={{ !_card }}>
-        <b:label>{{ label }}</b:label>
+const {children, label, className} = this.get();
+const {card, virtual} = this.select.get();
+const { k } = this.config;
+
+const classNameObj = {
+    [`${k}-select-group`]: true,
+    [className]: className,
+    [makeGroupStyles(k)]: true,
+}
+
+<div {...getRestProps(this)} class={classNameObj}>
+    <div class={`${k}-select-group-label`} v-if={!card}>
+        <b:label>{label}</b:label>
     </div>
-    {{ children }}
+    <VirtualList disabled={!virtual}>{children}</VirtualList>
 </div>

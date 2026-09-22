@@ -10,17 +10,15 @@ order: 1
 选中的叶子节点
 
 ```vdt
-import Tree from 'kpc/components/tree';
-import Button from 'kpc/components/button';
-
-const data = self.get('data');
+import {Tree, Button} from 'kpc';
 
 <div>
-    <Button ev-click={{ self._getCheckedData }}>get checked data</Button>
-    <Button ev-click={{ self._getCheckedLeavesData }}>get checked leaves data</Button>
+    <Button ev-click={this.getCheckedData}>get checked data</Button>
+    <Button ev-click={this.getCheckedLeavesData}>get checked leaves data</Button>
     <br />
     <br />
-    <Tree data={{ data }} 
+    <Tree data={this.get('data')} 
+        selectable={false}
         checkbox
         ref="tree"
         v-model:checkedKeys="checkedKeys"
@@ -33,12 +31,13 @@ const data = self.get('data');
     margin-right 16px
 ```
 
-```js
-export default class extends Intact {
-    @Intact.template()
+```ts
+import {bind} from 'kpc';
+
+export default class extends Component {
     static template = template;
 
-    defaults() {
+    static defaults() {
         return {
             data: [
                 {
@@ -56,6 +55,7 @@ export default class extends Intact {
                 },
                 {
                     label: 'First floor-2',
+                    key: 'floor-2',
                     children: [
                         {
                             label: 'Second floor-2.1',
@@ -85,11 +85,13 @@ export default class extends Intact {
         }
     }
 
-    _getCheckedData() {
+    @bind
+    getCheckedData() {
         console.log(this.refs.tree.getCheckedData());
     }
 
-    _getCheckedLeavesData() {
+    @bind
+    getCheckedLeavesData() {
         console.log(this.refs.tree.getCheckedData(true));
     }
 }

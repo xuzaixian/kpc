@@ -1,27 +1,43 @@
-import BreadcrumbItem from './item';
+import {getRestProps, mapChildren} from '../utils';
+import {BreadcrumbItem} from './item';
+import { makeStyles } from './styles';
+import { Icon } from '../icon';
 
-const {children, separator, className, style} = self.get();
+const {children, separator, className} = this.get();
+const { k } = this.config;
 
 const classNameObj = {
-    'k-breadcrumb': true,
+    [`${k}-breadcrumb`]: true,
     [className]: className,
+    [makeStyles(k)]: true,
 };
 
-const _children = children ? (Array.isArray(children) ? children : [children]) : children;
+const separatorVNode = (
+    <span class={`${k}-breadcrumb-separator`}>
+        <template v-if={!$blocks.separator && !separator}>
+            <Icon class="k-icon-right" size="small"/>
+        </template>
+        <b:separator v-else>{separator}</b:separator>
+    </span>
+);
+const vNodes = [];
+let lastIndex = -1;
+let separatorAmount = 0;
+mapChildren(children, (vNode, index) => {
+    vNodes.push(vNode);
+    if (vNode.tag === BreadcrumbItem) {
+        lastIndex = index;
+        separatorAmount++;
+        vNodes.push(separatorVNode);
+    }
+});
+// remove the last BreadcrumbItem's separator,
+// because it may have other vNodes follow the last BreadcrumbItem.
+// we record the last separator's index and splice array like bellow to remove it
+if (lastIndex > -1) {
+    vNodes.splice(lastIndex + separatorAmount, 1);
+}
 
-const _separator = <b:separator>{{ separator }}</b:separator>
-
-<div class={{ classNameObj }} style={{ style }}>
-    {{ __u.map(_children, (vNode, index) => {
-        if (vNode.tag === BreadcrumbItem) {
-            vNode.props = {...vNode.props};
-            if (_separator != null && vNode.props.separator == null) {
-                vNode.props.separator = _separator;
-            }
-            if (index === _children.length - 1) {
-                vNode.props.separator = null;
-            }
-        }
-        return vNode;
-    }) }} 
+<div class={classNameObj} {...getRestProps(this)}>
+    {vNodes}
 </div>

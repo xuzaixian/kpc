@@ -1,61 +1,51 @@
-import Tab from './tab';
-import Button from '../button';
+import {Button} from '../button';
+import {getRestProps} from '../utils';
+import {makeStyles} from './styles';
+import {Icon} from '../icon';
 
+const {className, children, vertical, size, type} = this.get();
 const {
-    className, data, value, children,
-    style, vertical, size, type,
-    _activeBarStyle, _scroll, _left,
-    _prev, _next
-} = self.get();
+    isScroll, offset, enablePrev, enableNext,
+    prev, next, scrollRef, wrapperRef
+} = this.scroll;
+const { k } = this.config;
 
 const classNameObj = {
-    'k-tabs': true,
+    [`${k}-tabs`]: true,
+    [`${k}-size-${size}`]: size,
+    [`${k}-vertical`]: vertical,
+    [`${k}-type-${type}`]: true,
+    [`${k}-is-scroll`]: isScroll.value,
     [className]: className,
-    [`k-${size}`]: size !== 'default',
-    'k-vertical': vertical,
-    'k-card': type === 'no-border-card',
-    [`k-${type}`]: type !== 'default',
-    [`k-is-scroll`]: _scroll
+    [makeStyles(k)]: true,
 };
 
-<div class={{ classNameObj }} style={{ style }}>
-    <Button class="k-prev" type="none" icon
-        v-if={{ _scroll }}
-        key="prev" 
-        size={{ size }}
-        disabled={{ !_prev }}
-        ev-click={{ self._prev }}
+<div class={classNameObj} {...getRestProps(this)}>
+    <Button class={`${k}-tabs-prev`} type="none" icon
+        v-if={isScroll.value}
+        key="prev"
+        size={size}
+        disabled={!enablePrev.value}
+        ev-click={prev}
     >
-        <i class="ion-ios-arrow-left"></i>
+        <Icon class={vertical ? `${k}-icon-up` : `${k}-icon-left`} />
     </Button>
-    <div class="k-scroll c-clearfix" ref="scroll">
-        <div class="k-wrapper" ref="wrapper" style={{ {transform: `translateX(${_left}px)`} }}>
-            <a v-for={{ data }}
-                class={{ {
-                    'k-tab': true, 
-                    'k-active': item.value === value,
-                } }}
-                v-for-value="item"
-                ev-click={{ self._changeTab.bind(self, item) }}
-            >{{ item.text }}</a>
-            {{ __u.map(children ? (Array.isArray(children) ? children : [children]) : children, vNode => {
-                if (vNode.tag === Tab) {
-                    vNode.props = {...vNode.props, _value: value, _parent: self};
-                }
-                return vNode;
-            }) }}
-            <div class="k-active-bar" v-if={{ type === 'default' }}
-                style={{ _activeBarStyle }}
-            ></div>
+    <div class={`${k}-tabs-scroll c-clearfix`} ref={scrollRef}>
+        <div class={`${k}-tabs-wrapper`}
+            ref={wrapperRef}
+            style={{transform: vertical ? `translateY(${offset.value}px)` : `translateX(${offset.value}px)`}}
+        >
+            {children}
+            <div class={`${k}-tabs-active-bar`} style={this.activeBar.value}></div>
         </div>
     </div>
-    <Button class="k-next" type="none" icon
-        v-if={{ _scroll }}
-        key="next" 
-        size={{ size }}
-        disabled={{ !_next }}
-        ev-click={{ self._next }}
+    <Button class={`${k}-tabs-next`} type="none" icon
+        v-if={isScroll.value}
+        key="next"
+        size={size}
+        disabled={!enableNext.value}
+        ev-click={next}
     >
-        <i class="ion-ios-arrow-right"></i>
+        <Icon class={vertical ? `${k}-icon-down` : `${k}-icon-right`} />
     </Button>
 </div>

@@ -1,39 +1,43 @@
-import Step from './step';
+import {getRestProps, eachChildren} from '../utils';
+import {Step} from './step';
+import {makeStyles} from './styles';
+import {context as StepsContext} from './context';
 
 const {
-    children, value, style,
-    status, type, clickable
-} = self.get();
+    children, className, value,
+    status, type, clickable, vertical,
+} = this.get();
+
+const { k } = this.config;
 
 const classNameObj = {
-    'k-steps c-clearfix': true,
-    [`k-${type}`]: true,
-    'k-clickable': clickable,
+    [`${k}-steps`]: true,
+    [className]: className,
+    [`${k}-${type}`]: true,
+    [`${k}-clickable`]: clickable,
+    [`${k}-vertical`]: vertical,
+    [makeStyles(k)]: true,
 };
 
 let stepIndex = 0;
-let steps = (Array.isArray(children) ? children : [children]).filter(vNode => {
-    if (vNode && vNode.tag === Step) {
-        const props = vNode.props = {...vNode.props, index: stepIndex};
-        if (value == stepIndex) {
-            props.selected = true;
-            if (status === 'error') {
-                props.error = true;
-            }
-        } else if (value > stepIndex) {
-            props.done = true;
-            props['ev-click'] = self._changeIndex.bind(self, stepIndex);
-        }
+const steps = [];
+eachChildren(children, vNode => {
+    if (vNode.tag === Step) {
+        vNode.props = {...vNode.props, index: stepIndex};
+        steps.push(vNode);
         stepIndex++;
-        return true;
     }
-    return false;
 });
 
 // add width
-steps = steps.map(vNode => {
-    vNode.props.width = (100 / stepIndex) + '%'; 
-    return vNode;
-});
+/* const width = (100 / stepIndex) + '%';  */
 
-<div class={{ classNameObj }} style={{ style }}>{{ steps }}</div>
+<StepsContext.Provider value={{
+    value,
+    status,
+    /* width, */
+    type,
+    onChange: this.changeIndex 
+}}>
+    <div class={classNameObj} {...getRestProps(this)}>{steps}</div>
+</StepsContext.Provider>

@@ -1,25 +1,31 @@
-const {addStyle} = require('../utils');
+import {makeStyles} from './styles';
+import {addStyle, getRestProps} from '../utils';
+import {Icon} from '../icon';
 
 let {
-    className, style, children,
-    name, on, off, value,
-    trueValue, falseValue, width,
-    height, size, disabled, _dragging
-} = self.get();
+    className, style, name, on,
+    off, value, trueValue, falseValue,
+    width, height, size, disabled, loading
+} = this.get();
+
+const {start, dragging, barRef, barWidth} = this.draggable;
+const { k } = this.config;
 
 const classNameObj = {
-    'k-switch': true,
+    [`${k}-switch`]: true,
     [className]: className,
-    'k-checked': value === trueValue, 
-    [`k-${size}`]: true,
-    'k-disabled': disabled,
-    'k-dragging': _dragging,
+    [`${k}-checked`]: value === trueValue, 
+    [`${k}-${size}`]: true,
+    [`${k}-disabled`]: disabled,
+    [`${k}-dragging`]: dragging.value,
+    [makeStyles(k)]: true,
 };
 
 
 let onStyle;
 let offStyle;
 let barStyle;
+let iconStyle;
 if (width || height) {
     const _style = {};
     onStyle = {};
@@ -47,37 +53,48 @@ if (width || height) {
         barStyle = {
             width: value === trueValue ? '100%' : `${height}px`,
         }
+        iconStyle = {
+            fontSize: `${height * 0.7}px`,
+        }
     }
     style = addStyle(style, _style);
 }
 
-<div class={{ classNameObj }} 
-    style={{ style }} 
-    ev-click={{ self._toggle }}
-    tabindex={{ disabled ? "-1" : "0" }}
-    ev-keypress={{ self._onKeypress }}
+if (barWidth.value) {
+    barStyle = addStyle(barStyle, {width: barWidth.value + 'px'});
+}
+
+<div class={classNameObj} 
+    {...getRestProps(this)}
+    style={style} 
+    ev-click={this.onClick}
+    tabindex={disabled ? "-1" : "0"}
+    ev-keypress={this.onKeypress}
+    ref={this.elementRef}
 >
-    <input type="checkbox" name={{ name }} 
-        disabled={{ disabled }}
+    <input type="checkbox"
+        name={name} 
+        disabled={disabled}
         v-model="value" 
-        v-model-true={{ trueValue }}
-        v-model-false={{ falseValue }}
-        ref="input"
+        v-model-true={trueValue}
+        v-model-false={falseValue}
         tabindex="-1"
-    /> 
-    <div class="k-off" v-if={{ off || blocks.off }} style={{ offStyle }}>
-        <b:off>{{ off }}</b:off>
+    />
+    <div class={`${k}-switch-off`} v-if={off || $blocks.off} style={offStyle}>
+        <b:off>{off}</b:off>
     </div>
-    <div class="k-bar" ref="bar" style={{ barStyle }}>
-        <div class="k-on" v-if={{ on || blocks.on }} style={{ onStyle }}>
-            <b:on>{{ on }}</b:on>
+    <div class={`${k}-switch-bar`} ref={barRef} style={barStyle}>
+        <div class={`${k}-switch-on`} v-if={on || $blocks.on} style={onStyle}>
+            <b:on>{on}</b:on>
         </div>
-        <div class="k-wrapper">
-            <div class="k-handle"
-                ev-click={{ self._handleClick }}
-                ev-mousedown={{ self._dragStart }}
-                ref="handle"
-            ><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"></div>
+        <div class={`${k}-switch-wrapper`}>
+            <Icon v-if={loading} class={`${k}-switch-icon ion-load-c`} rotate style={iconStyle}/>
+            <div class={`${k}-switch-handle`}
+                ev-click={this.onClickOnHandle}
+                ev-mousedown={start}
+            >
+                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+            </div>
         </div>
     </div>
 </div>

@@ -1,72 +1,134 @@
+import {getClassAndStyleForFixed} from './useFixedColumns';
 import {Dropdown, DropdownMenu, DropdownItem} from '../dropdown';
+import {Button} from '../button';
+import {Icon} from '../icon';
 import {Checkbox} from '../checkbox';
-import {Radio} from '../radio';
-import {isStringOrNumber} from '../utils';
-import {normalize} from 'intact';
+import {makeGroupMenuStyles} from './styles';
+import {isStringOrNumber, get, isArray} from 'intact-shared';
+import {context as GroupContext} from './useGroup';
+import {context as SortableContext} from './useSortable';
+import {linkEvent} from 'intact';
+import {context as TableContext} from './useColumns';
+import {context as ResizableContext} from './useResizable';
+import {context as FixedColumnsContext} from './useFixedColumns';
+import {stopPropagation, addStyle} from '../utils';
+import {Input} from '../input';
+import {_$} from '../../i18n';
+import {ignoreSortable} from './useSortable';
 
-let {
-    title, key, group, multiple, ignore,
-    sortable, $parent, _show, className,
-} = self.get();
+const {title, fixed, group, multiple, key, sortable, cols, rows, hidden, hideGroupHeader} = this.get();
+const {
+    onSelect, isChecked, keywords, filteredGroup,
+    onShow, reset, confirm, dropdownRef,
+    localGroupValue, isEmptyValue, checkAll,
+} = this.group;
+const { k } = this.config;
 
-const width = self.width;
+<TableContext.Consumer>
+    {({checkType, lastCellKey, lastCellStyle}) => {
+        return <GroupContext.Consumer>
+            {({group: currentGroup, onChange}) => {
+                return <SortableContext.Consumer>
+                    {({sort, onChange: onChangeSort}) => {
+                        return <ResizableContext.Consumer>
+                            {({resizable, onStart}) => {
+                                return <FixedColumnsContext.Consumer>
+                                    {(offsetMap) => {
+                                        const {className, style} = getClassAndStyleForFixed(this.get(), offsetMap[key], k, checkType);
+                                        const classNameObj = {
+                                            [`${k}-column-sortable`]: sortable,
+                                            [`${k}-hidden`]: hidden,
+                                            [className]: className,
+                                        }
 
-const {sort, resizable, container} = $parent.get();
-const groupText = group && self._getGroupText() || '';
+                                        const groupValue = currentGroup && currentGroup[key];
+                                        const type = sort && sort.key === key && sort.type;
 
-const thTitle = isStringOrNumber(title) ? title + groupText : undefined;
-title = normalize ? normalize(title) : title;
+                                        let checked;
+                                        return <th className={classNameObj}
+                                            style={key === lastCellKey ? addStyle(style, lastCellStyle) : style}
+                                            title={isStringOrNumber(title) ? title : null}
+                                            ev-click={sortable ? linkEvent(key, onChangeSort) : null}
+                                            colspan={cols}
+                                            rowspan={rows}
+                                            ref={this.elementRef}
+                                        >
+                                            <div v-if={resizable && this.$vNode.props.prevVNode}
+                                                class={`${k}-table-resize`}
+                                                ev-mousedown={e => {
+                                                    e._vNode = this.$vNode;
+                                                    onStart(e);
+                                                }} 
+                                                ev-click={ignoreSortable}
+                                            />
+                                            <div class={`${k}-table-title`}>
+                                                <div class={`${k}-table-title-text c-ellipsis`}>
+                                                    <b:title>{title}</b:title>
+                                                </div>
+                                                <Dropdown v-if={group}
+                                                    position={{my: 'left top', at: 'left bottom+5', collision: 'flipfit'}}
+                                                    key="dropdown"
+                                                    trigger="click"
+                                                    ev-show={() => onShow(groupValue)}
+                                                    ref={dropdownRef}
+                                                >
+                                                    <Icon class={`${k}-icon-down-squared ${k}-table-group`}
+                                                        ev-click={ignoreSortable}
+                                                        hoverable
+                                                        color={isEmptyValue(groupValue) ? null : 'primary'}
+                                                    />
+                                                    <DropdownMenu class={{[`${k}-table-group-dropdown`]: true, [makeGroupMenuStyles(k)]: true}}>
+                                                        <div class={`${k}-table-group-header`} v-if={!hideGroupHeader}>
+                                                            <Input size="small" fluid
+                                                                placeholder={_$('请输入关键字')}
+                                                                value={keywords.value}
+                                                                ev-$change:value={keywords.set}
+                                                                clearable
+                                                            >
+                                                                <b:suffix><Icon class={`${k}-icon-search`} /></b:suffix>
+                                                            </Input>
+                                                        </div>
+                                                        <div class={`${k}-table-group-body`}>
+                                                            <DropdownItem v-for={filteredGroup.value}
+                                                                ev-select={() => onSelect($value.value, onChange)}
+                                                                hideOnSelect={!multiple}
+                                                                class={{[`${k}-active`]: (checked = isChecked($value.value))}}
+                                                            >
+                                                                <Checkbox v-if={multiple} value={checked}>{$value.label}</Checkbox>
+                                                                <span v-else>{$value.label}</span>
+                                                            </DropdownItem>
+                                                        </div>
+                                                        <div class={`${k}-table-group-footer`} v-if={multiple}>
+                                                            <Button size="mini"
+                                                                type="link"
+                                                                ev-click={checkAll}
+                                                            >{_$('全选')}</Button>
+                                                            <Button size="small"
+                                                                disabled={isEmptyValue(localGroupValue.value)}
+                                                                ev-click={() => reset(onChange)}
+                                                            >{_$('重置')}</Button>
+                                                            <Button type="primary" size="small"
+                                                                ev-click={() => confirm(onChange)}
+                                                            >{_$('确定')}</Button>
+                                                        </div>
+                                                    </DropdownMenu>
+                                                </Dropdown>
+                                                <div v-if={sortable}
+                                                    class={{[`${k}-column-sort`]: true, [`${k}-${type}`]: type}}
+                                                >
+                                                    <Icon class={`${k}-icon-up-bold ${k}-asc`} size="mini" />
+                                                    <Icon class={`${k}-icon-down-bold ${k}-desc`} size="mini" />
+                                                </div>
+                                            </div>
+                                        </th>
+                                    }}
+                                </FixedColumnsContext.Consumer>
+                            }}
+                        </ResizableContext.Consumer>
+                    }}
+                </SortableContext.Consumer>
+            }}
+        </GroupContext.Consumer>
+    }}
+</TableContext.Consumer>
 
-<th title={{ thTitle }}
-    class={{ {
-        'k-sortable': sortable,
-        [className]: className,
-    } }}
-    ev-click={{ self.onClick }}
-    data-ignore={{ ignore ? '' : undefined }}
->
-    <div v-if={{ resizable }} class="k-resize" 
-        ev-mousedown={{ self.onDragStart }}
-        ev-click={{ self._stopPropagation }} 
-    ></div>
-    <div class={{ {"k-th": true, "k-group-show": _show} }}>
-        <div v-if={{ !group }} class="c-ellipsis">
-            <b:title>{{ title }}</b:title>
-        </div>
-        <div class="k-group" v-if={{ group }}>
-            <Dropdown container={{ container }}>
-                <i class="k-arrow ion-ios-arrow-down"></i>
-                <DropdownMenu class={{ {'k-table-dropdown': true, 'k-multiple': multiple} }}
-                    ev-$change:value={{ self._onChangeShow }}
-                >
-                    <DropdownItem v-for={{ group }} 
-                        class={{ {'k-active': self._isChecked(value.value)} }}
-                        ev-select={{ self._onSelect.bind(self, value.value) }}
-                        hideOnSelect={{ !multiple }}
-                    >
-                        <Checkbox name="key" v-if={{ multiple }}
-                            value={{ self._isChecked(value.value) }}
-                        >{{ value.label }}</Checkbox>
-                        <span v-else>{{ value.label }}</span>
-                    </DropdownItem>
-                </DropdownMenu>
-            </Dropdown>
-            <div class="c-ellipsis">
-                <b:title>{{ title }}</b:title>
-                {{ groupText }}
-            </div>
-        </div>
-        {{ do {
-            if (sortable) {
-                const type = key === sort.key ? sort.type : '';
-                <div class={{ {'k-sort': true, [`k-${type}`]: type} }}>
-                    <i class={{ {
-                        'k-icon': true,
-                        [`icon-${type}`]: type,
-                        'icon-sortable': !type,
-                    } }}></i>
-                </div>
-            }
-        } }}
-    </div>
-</th>

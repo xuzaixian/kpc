@@ -1,0 +1,57 @@
+import {getClassAndStyleForFixed} from './useFixedColumns';
+import {get, noop} from 'intact-shared';
+import {Button} from '../button';
+import {Icon} from '../icon';
+import {getTextByChildren} from '../utils';
+import {Ellipsis} from '../ellipsis';
+
+const {
+    props, rowIndex, columnIndex, offset,
+    data, checkType, indent, grid,
+    colspan, rowspan, onClickArrow, hasChildren, loaded,
+    spreadArrowIndex
+} = this.get();
+const { k } = this.config;
+
+const blocks = props.$blocks; 
+let children = get(data, props.key);
+const isTree = !spreadArrowIndex ? columnIndex === 0 : columnIndex === spreadArrowIndex
+if (blocks) {
+    const template = blocks.template || blocks.default;
+    if (template) {
+        children = template(noop, [data, rowIndex]);
+    }
+}
+
+if (props.ellipsis) {
+    children = <Ellipsis>{children}</Ellipsis>
+}
+
+let {className, style} = getClassAndStyleForFixed(props, offset, k, checkType);
+if (isTree && indent) {
+    style || (style = {});
+    style.paddingLeft = `${indent}px`;
+}
+
+const classNameObj = {
+    [`${k}-hidden`]: props.hidden,
+    [className]: className
+}
+
+<td class={classNameObj}
+    style={style}
+    title={getTextByChildren(children)}
+    rowspan={rowspan}
+    colspan={colspan}
+>
+    <Button v-if={hasChildren && isTree}
+        type="none" icon circle size="mini"
+        class={`${k}-table-arrow`}
+        ev-click={onClickArrow}
+        disabled={loaded === false}
+    >
+        <Icon v-if={loaded !== false} class={`${k}-icon-right`} size="small" />
+        <Icon v-else class={`${k}-tree-icon ion-load-c`} rotate />
+    </Button>
+    {children}
+</td>

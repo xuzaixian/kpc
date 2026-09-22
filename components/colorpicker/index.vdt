@@ -1,0 +1,37 @@
+import {Tooltip} from '../tooltip';
+import {getRestProps} from '../utils';
+import {makeStyles} from './styles';
+import {ColorpickerPanel} from './panel';
+import {Dropdown, DropdownMenu} from '../dropdown';
+
+const {
+    className, transition, presets,
+    value, size, disabled, container,
+    position,
+} = this.get();
+const { k } = this.config;
+
+const classNameObj = {
+    [`${k}-colorpicker`]: true,
+    [className]: className,
+    [`${k}-${size}`]: size !== 'default',
+    [`${k}-disabled`]: disabled,
+    [makeStyles(k)]: true,
+};
+
+<div class={classNameObj} {...getRestProps(this)}>
+    <Dropdown
+        position={position}
+        trigger="click"
+        disabled={disabled}
+        container={container}
+        v-model:value="show"
+    >
+        <div class={`${k}-colorpicker-color`}>
+            <div class={`${k}-colorpicker-inner`} style={{backgroundColor: value}}></div>
+        </div>
+        <DropdownMenu class={`${k}-colorpicker-content`}>
+            <ColorpickerPanel v-model="value" presets={presets} />
+        </DropdownMenu>
+    </Dropdown>
+</div>

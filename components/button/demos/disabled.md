@@ -6,28 +6,24 @@ order: 5
 添加`disabled`属性，可以禁用按钮
 
 ```vdt
-import Button from 'kpc/components/button';
+import {Button, Icon} from 'kpc';
 
 <div>
     <Button disabled>disabled</Button>
-    <Button disabled type="none">disabled text</Button>
-    <Button disabled icon circle><i class="k-icon ion-ios-search"></i></Button>
+    <Button disabled icon circle><Icon class="k-icon-search" /></Button>
+    <Button type="primary" disabled>primary</Button>
+    <Button type="secondary" disabled>secondary</Button>
+    <Button type="warning" disabled>warning</Button>
+    <Button type="danger" disabled>danger</Button>
+    <Button type="success" disabled>success</Button>
+    <Button type="none" disabled>none</Button>
+    <Button type="link" disabled>link</Button>
+    <Button type="flat" disabled>flat</Button>
+    <Button color="red" disabled>custom</Button>
 </div>
 ```
 
-```jsx
-import React from 'react';
-import Button from 'kpc/components/button';
-
-export default class extends React.Component {
-    render() {
-        return (
-            <div>
-                <Button disabled>disabled</Button>
-                <Button disabled type="none">disabled text</Button>
-                <Button disabled icon circle><i className="k-icon ion-ios-search"></i></Button>
-            </div>
-        )
-    }
-}
+```styl
+.k-btn
+    margin 0 20px 20px 0
 ```

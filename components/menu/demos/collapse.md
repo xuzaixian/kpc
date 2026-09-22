@@ -6,21 +6,34 @@ order: 2
 添加`collapse`属性，可以使菜单呈现折叠状态
 
 ```vdt
-import {Menu, MenuItem} from 'kpc/components/menu';
-import {Switch} from 'kpc/components/switch';
+import {Menu, MenuItem, MenuTitle, Switch, Icon} from 'kpc';
 
 <div>
-    <Switch on="收起" off="展开" v-model="isCollapse" width="60" style="margin-right: 16px;" />
-    <Switch on="light" off="dark" v-model="theme" width="60" trueValue="light" falseValue="dark"/>
+    <Switch v-model="collapse"
+        on="收起"
+        off="展开"
+        width="60"
+        style="margin-right: 16px;"
+    />
+    <Switch value={this.get('theme')}
+        ev-$change:value={this.setTheme}
+        on="light"
+        off="dark"
+        width="60"
+        trueValue="light"
+        falseValue="dark"
+    />
     <br /><br />
-    <Menu v-model:expandedKeys="expandedKeys" 
-        collapse={{ self.get('isCollapse') }}
-        theme={{ self.get('theme') }}
+    <Menu v-model:expandedKeys="expandedKeys"
+        v-model:selectedKey="selectedKey"
+        collapse={this.get('collapse')}
+        theme={this.get('theme')}
+        ref="__test"
     >
-        <MenuItem key="1"><i class="k-icon ion-flag"></i>menu 1</MenuItem>
-        <MenuItem key="2" disabled><i class="k-icon ion-star"></i>menu 2</MenuItem>
+        <MenuItem key="1"><Icon class="ion-flag" />menu 1</MenuItem>
+        <MenuItem key="2" disabled><Icon class="ion-star" />menu 2</MenuItem>
         <MenuItem key="3">
-            <i class="k-icon ion-heart"></i>menu 3
+            <Icon class="ion-heart" />menu 3
             <Menu>
                 <MenuItem key="3-1">sub menu 1</MenuItem>
                 <MenuItem key="3-2">sub menu 2</MenuItem>
@@ -34,20 +47,34 @@ import {Switch} from 'kpc/components/switch';
                 </MenuItem>
             </Menu>
         </MenuItem>
-        <MenuItem key="4"><i class="k-icon ion-gear-b"></i>menu 4</MenuItem>
+        <MenuItem key="4" to="/"><Icon class="ion-gear-b" />menu 4</MenuItem>
+        <MenuTitle><Icon class="ion-cloud" />menu 5</MenuTitle>
+        <MenuItem key="5-1"><Icon class="ion-stats-bars" />sub menu 1</MenuItem>
+        <MenuItem key="5-2"><Icon class="ion-upload" />sub menu 2</MenuItem>
     </Menu>
 </div>
 ```
 
-```js
-export default class extends Intact {
-    @Intact.template()
+```ts
+import {MenuProps, bind} from 'kpc';
+
+interface Props extends MenuProps { }
+
+export default class extends Component<Props> {
     static template = template;
 
-    defaults() {
+    static defaults() {
         return {
-            expandedKeys: ['3']
+            expandedKeys: ['3'],
+            selectedKey: '3-2',
+            collapse: true,
+            theme: 'dark' as MenuProps['theme']
         };
+    }
+
+    @bind
+    setTheme(theme?: string) {
+        this.set('theme', theme as MenuProps['theme']);
     }
 }
 ```

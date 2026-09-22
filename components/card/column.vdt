@@ -1,0 +1,22 @@
+import {addStyle, getRestProps} from '../utils';
+
+const {children, className, width, style, center} = this.get();
+const { k } = this.config;
+
+let _style = style;
+if (width) {
+    _style = addStyle(style, {width})
+}
+
+const classNameObj = {
+    [`${k}-card-column`]: true,
+    [`${k}-fluid`]: !width,
+    [`${k}-center`]: center,
+    [className]: className,
+}
+
+<div 
+    class={classNameObj}
+    style={_style}
+    {...getRestProps(this)}
+>{children}</div>

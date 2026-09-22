@@ -6,22 +6,24 @@ sidebar: doc
 ---
 
 > Vue不能使用`Switch`作为组件名，可以自定义为`KSwitch`: 
-> `import {Switch as KSwitch} from 'kpc/components/switch';`
+> `import {Switch as KSwitch} from 'kpc';`
 
 # 属性
 
 | 属性 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
-| name | 可定义当前开关的名称 | `String` | `undefined` |
-| on | 定义开启时显示文案 | `String` | `undefined` |
-| off | 定义关闭时显示文案 | `String` | `undefined` |
-| width | 开关的宽度 | `Number` | `undefined` |
-| height | 开关的高度 | `Number` | `undefined` |
-| size | 开关的型号 | `String` | `"default"` |
-| disabled | 控制禁用 | `Boolean` | `false` |
-| value | 开关当前值，可用`v-model`双向绑定 | `*` | `false` |
-| trueValue | 开启时的值 | `*` | `true` |
-| falseValue | 关闭时的值 | `*` | `false` |
+| name | 可定义当前开关的名称 | `string` | `undefined` |
+| on | 定义开启时显示文案 | `string` | `undefined` |
+| off | 定义关闭时显示文案 | `string` | `undefined` |
+| value | 开关当前值，可用`v-model`双向绑定 | `any` | `false` |
+| trueValue | 开启时的值 | `any` | `true` |
+| falseValue | 关闭时的值 | `any` | `false` |
+| width | 开关的宽度 | `number` &#124; `string` | `undefined` |
+| height | 开关的高度 | `number` &#124; `string` | `undefined` |
+| size | 尺寸 | `"large"` &#124; `"default"` &#124; `"small"` &#124; `"mini"` | `"default"` |
+| disabled | 控制禁用 | `boolean` | `false` |
+| loading | 开关loading属性 | `boolean` | `false` |
+| beforeChange | 切换`Switch`之前的拦截函数，如果该函数返回`false`则阻止本次切换，支持异步函数, 参数为当前值from，期望切换值to | <code>(from: any, to: any) => boolean &#124; Promise&lt;boolean&gt;</code> | `undefined` |
 
 # 扩展点
 
@@ -30,11 +32,18 @@ sidebar: doc
 | on | 扩展开启时的文案 |
 | off | 扩展关闭时的文案 |
 
+# 事件
+
+| 事件名 | 说明 | 参数 |
+| --- | --- | --- |
+| click | 点击时触发 | `(e: MouseEvent) => void` |
+| keypress | 键盘按下时触发 | `(e: KeyboardEvent) => void` |
 
 # 方法
 
-| 方法名 | 说明 | 参数 | 返回值 |
+| 方法 | 说明 | 参数 | 返回值 |
 | --- | --- | --- | --- |
-| isChecked | 判断是否开启 | - | `Boolean` |
-| check | 开启按钮 | - | `undefined` |
-| uncheck | 关闭按钮 | - | `undefined` |
+| isChecked | 当前是否开启状态 | - | `boolean` |
+| check | 设为开启状态 | - | `void` |
+| uncheck | 设为关闭状态 | - | `void` |
+| toggle | 切换状态 | `isKeypress: boolean` | `Promise<void>` |

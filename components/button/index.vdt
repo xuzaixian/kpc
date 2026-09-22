@@ -1,87 +1,104 @@
-import {isStringOrNumberNotEmpty} from '../utils';
+import {addStyle, getRestProps} from '../utils';
+import {Icon} from '../icon';
+import {makeButtonStyles} from './styles';
+import {DynamicButton} from './dynamicButton';
+import {Wave} from '../wave';
+import {button as theme} from './styles';
 
 let {
     type, className, size, icon, circle, ref, key, tabindex,
     tagName, htmlType, fluid, children, loading, disabled,
-    value, _value, name, tagProps, _checkType, ...rest
-} = self.get();
+    name, ghost, color, style
+} = this.get();
 
-const checked = value !== undefined ?
-    _checkType === 'radio' ? 
-        value === _value :  
-        (
-            _checkType === 'checkbox' ? 
-                Array.isArray(_value) && !!~_value.indexOf(value) :
-                false
-        )
-    : false;
+const { cls, k } = this.config;
 
-const classNameObj = {
-    'k-btn': true,
-    [`k-${type}`]: type !== 'default',
-    'k-btn-icon': icon,
-    [`k-${size}`]: size !== 'default',
-    [className]: className, 
-    'k-circle': circle,
-    'k-loading': loading,
-    'k-fluid': fluid,
-    'k-active': checked,
-    'k-disabled': disabled || loading,
-};
+const checked = this.isChecked();
 
-const Button = props => {
-    if (props.href && tagName === 'button') {
-        tagName = 'a';
-    }
-    if (tagName === 'button') {
-        // set type of html button
-        props.type = htmlType;
-    }
-    // disable button when loading
-    /* if (loading) props.disabled = true; */
-    return h(tagName, props, props.children);
-};
+const isIcon = child => (
+    child.tag === Icon ||
+    child.className && child.className.indexOf('icon') > -1
+);
 
+let iconSide;
 // hack for loading transition of width
 if (!icon && Array.isArray(children)) {
     children.forEach((child, index) => {
         if (child) {
-            if (child.type === 1 || isStringOrNumberNotEmpty(child)) {
-                // is a text node
-                // wrap text node with span
-                children[index] = <span>{{ child }}</span>
-            }
             // whether the icon is on the left side or right
             if (index === 0) {
-                if (child.className && child.className.indexOf('icon') > -1) {
-                    classNameObj['k-icon-left'] = true;
+                if (isIcon(child)) {
+                    iconSide = 'left';
                 }
             } else if (index === children.length - 1) {
-                if (child.className && child.className.indexOf('icon') > -1) {
-                    classNameObj['k-icon-right'] = true;
+                if (isIcon(child)) {
+                    iconSide = 'right';
                 }
             }
         }
     });
-} else if (isStringOrNumberNotEmpty(children)) {
-    // wrap text node with span
-    children = <span>{{ children }}</span>
 }
 
-<Button class={{ classNameObj }} {{ ...rest }} {{ ...tagProps }}
-    ev-click={{ self._onClick }}
-    tabindex={{ disabled || loading ? "-1" : tabindex }}
-    ev-mouseup={{ self._blur }}
->
-    {{ loading ? 
-        classNameObj['k-icon-right'] ?
-            [children, <i class="k-icon ion-load-c icon-loading" key="k-loading"></i>] :
-            [<i class="k-icon ion-load-c icon-loading" key="k-loading"></i>, children] :
-        children 
-    }}
-    <input type={{ _checkType }} v-if={{ _checkType !== 'none' }}
-        name={{ name }} 
-        checked={{ checked }}
-        tabindex="-1"
+const classNameObj = {
+    [cls('btn')]: true,
+    [cls(size)]: size !== 'default',
+    [cls(type)]: !color,
+    [cls(`btn-icon`)]: icon,
+    [className]: className, 
+    [cls('circle')]: circle,
+    [cls('loading')]: loading,
+    [cls('fluid')]: fluid,
+    [cls('active')]: checked,
+    [cls('custom')]: color,
+    [cls('disabled')]: disabled || loading,
+    [cls('ghost')]: ghost,
+    [makeButtonStyles(k, iconSide, color)]: true,
+};
+
+const loadingIcon = (
+    <Icon class={`ion-load-c ${k}-icon-loading`}
+        size={size /*loadingSizeMap[size]*/}
+        key="k-loading"
+        rotate
     />
-</Button>
+);
+
+const buttonGroup = this.buttonGroup;
+const checkType = buttonGroup?.get('checkType') ?? 'none';
+const btnWidth = buttonGroup?.get('btnWidth');
+const _style = {
+    width: typeof btnWidth === 'number' ? `${btnWidth}px` : btnWidth,
+}
+const isCheckType = checkType !== 'none';
+const typeStyles = theme[type];
+const waveColor = typeStyles && typeStyles.borderColor || color || theme.primary.borderColor;
+<Wave disabled={loading || disabled || type === 'none' || type === 'link'}
+    inset={type === 'flat' ? '-1px' : '-2px'}
+    color={waveColor}
+>
+    <DynamicButton 
+        class={classNameObj}
+        tagName={tagName}
+        {...getRestProps(this)}
+        style={btnWidth ? addStyle(style, _style) : style} 
+        ref={this.elementRef}
+        tabindex={disabled || loading ? '-1' : tabindex}
+        ev-click={this.onClick}
+        ev-mouseup={this.onMouseUp}
+        htmlType={htmlType}
+        name={isCheckType ? null : name}
+    >
+        {loading ? 
+            iconSide === 'right' ?
+                [children, loadingIcon] :
+                [loadingIcon, children] :
+            children 
+        }
+        <input type={checkType} v-if={isCheckType}
+            class={`${k}-button-input`}
+            name={name} 
+            checked={checked}
+            tabindex="-1"
+        />
+    </DynamicButton>
+</Wave>

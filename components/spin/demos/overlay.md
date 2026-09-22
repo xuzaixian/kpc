@@ -4,14 +4,14 @@ order: 1
 ---
 
 添加`overlay`属性，即可展示带遮罩层的加载动画，此时包含`Spin`的容器必须是定位元素，动画元素默认
-会居中展示，所以`center`属性在该情况下无效
+会居中展示，`center`属性在该情况下将被忽略
 
 ```vdt
-import Spin from 'kpc/components/spin';
-import {Table, TableColumn} from 'kpc/components/table';
+import {Spin} from 'kpc';
+import {Table, TableColumn} from 'kpc';
 
 <div class="wrapper">
-    <Table data={{ self.get('data') }}>
+    <Table data={this.get('data')}>
         <TableColumn key="a" title="表头1" />
         <TableColumn key="b" title="表头2" />
     </Table>
@@ -24,12 +24,11 @@ import {Table, TableColumn} from 'kpc/components/table';
     position relative
 ```
 
-```js
-export default class extends Intact {
-    @Intact.template()
+```ts
+export default class extends Component {
     static template = template;
 
-    defaults() {
+    static defaults() {
         return {
             data: [
                 {a: '第一行', b: '哈哈2'}, 

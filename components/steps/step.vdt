@@ -1,31 +1,45 @@
-import {addStyle} from '../utils';
-const {
-    children, selected, done, 
-    title, index, width, error,
-    className, style, ...rest
-} = self.get();
+import {linkEvent} from 'intact';
+import {getRestProps, addStyle} from '../utils';
+import {context as StepsContext} from './context';
+import {Icon} from '../icon';
 
-const classNameObj = {
-    'k-step': true,
-    'k-active': selected,
-    'k-done': done,
-    'k-error': error,
-    [className]: className,
-};
+const {children, title, index, className, style} = this.get();
+const { k } = this.config;
 
-<div class={{ classNameObj }} style={{ addStyle(style, {width: width}) }} {{ ...rest }}>
-    <div class="k-tail"></div>
-    <div class="k-wrapper">
-        <div class="k-head">
-            <div class="k-inner">
-                {{ /* <i class="ion-ios-checkmark-empty k-icon" v-if={{ done }}></i> */ }}
-                <i class="ion-ios-close-empty k-icon" v-if={{ error }}></i>
-                <span v-else>{{ index + 1 }}</span>
+<StepsContext.Consumer>
+    {({value, status, onChange, type}) => {
+        const selected = value === index;
+        const error = selected && status === 'error';
+        const done = value > index;
+        const classNameObj = {
+            [`${k}-step`]: true,
+            [`${k}-active`]: selected,
+            [`${k}-done`]: done,
+            [`${k}-error`]: error,
+            [className]: className,
+        };
+
+        return <div {...getRestProps(this)} 
+            class={classNameObj}
+            style={style}
+        >
+            <div class={`${k}-step-wrapper`}
+                ev-click={linkEvent(index, onChange)}
+            >
+                <div class={`${k}-step-mark`}>
+                    <Icon v-if={error && type !== 'simple'} class={`${k}-icon-close-bold`} color="danger" />
+                    <Icon v-else-if={done && (type === 'line' || type === 'line-compact')}
+                        class={`${k}-icon-check-bold`}
+                        color="primary"
+                    />
+                    <span v-else-if={type !== 'simple'}>{index + 1}</span>
+                </div>
+                <div class={`${k}-step-main`}>
+                    <div class={`${k}-step-title`}>{title}</div>
+                    <div class={`${k}-step-content`}>{children}</div>
+                </div>
             </div>
+            <div class={`${k}-step-tail`}></div>
         </div>
-        <div class="k-main">
-            <div class="k-title">{{ title }}</div>
-            <div class="k-content">{{ children }}</div>
-        </div>
-    </div>
-</div>
+    }}
+</StepsContext.Consumer>

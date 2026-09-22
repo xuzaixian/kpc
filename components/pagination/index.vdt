@@ -1,114 +1,150 @@
-import Select from '../select';
-import Input from '../input';
+import {getRestProps, mapChildren} from '../utils';
 import {ButtonGroup, Button} from '../button';
-import {_$} from '../utils';
+import {Select, Option} from '../select';
+import {Input} from '../input';
+import {Icon} from '../icon';
+import {_$} from '../../i18n';
+import {makeStyles} from './styles';
 
 const {
-    total, current, limit, limits, 
+    total, size, flat, simple, 
     className, showTotal, showGoto,
-    counts, size, noBorder, ...rest
-} = self.get();
+    counts, value, limit, limits,
+    showLimits, disableBtn, disablePage
+} = this.get();
 
 if (!total) return <!-- pagination -->
 
+const { k } = this.config;
+
 const classNameObj = {
-    'k-pagination': true,
+    [`${k}-pagination`]: true,
     [className]: className,
-    [`k-${size}`]: size !== 'default',
-    ['k-no-border']: noBorder,
+    [`${k}-${size}`]: size !== 'default',
+    [`${k}-flat`]: flat,
+    [`${k}-simple`]: simple,
+    [makeStyles(k)]: true,
 };
 
-let type = 'default';
-if (noBorder) {
-    type = 'none';
-}
+const type = flat ? 'flat' : simple ? 'none' : 'default';
 
 const totalPages = (Math.ceil(total / limit)) || 0;
 
 const paginationButton = function(page) {
+    let disabled = false;
+    if (page !== value) {
+        if (disablePage) {
+            disabled ||= !!disablePage(page, limit);
+        }
+        if (disableBtn) {
+            disabled ||= !!disableBtn(page, limit);
+        }
+    }
     return (
-        <Button type={{ type }} size={{ size }} icon value={{ page }}>{{ page }}</Button>
+        <Button type={type}
+            size={size}
+            icon
+            value={page}
+            disabled={disabled}
+        >{page}</Button>
     );
 };
 
 const paginationDot = function(callback) {
-    return <Button type={{ type }} size={{ size }} icon class="k-ellipsis" ev-click={{ callback }}>...</Button>
+    return <Button type={type}
+        size={size}
+        icon
+        class={`${k}-pagination-ellipsis`}
+        ev-click={callback}
+    >...</Button>
 };
 
-<div class={{ classNameObj }}>
-    <ButtonGroup checkType="radio" v-model="current">
-        <Button icon size={{ size }}
-            disabled={{ current <= 1 }}
-            ev-click={{ self.prev }}
-            type={{ type }}
-        ><i class="k-icon ion-ios-arrow-left"></i></Button>{{ 
-            do {
-                let items = [];
-                let minCount = Math.ceil(counts / 2);
-                let maxCount = totalPages - minCount;
-                let prevPage = current - 1;
-                let nextPage = current + 1;
+let paginationItems = [];
+let minCount = Math.ceil(counts / 2);
+let maxCount = totalPages - minCount;
+let prevPage = value - 1;
+let nextPage = value + 1;
 
-                if (totalPages > counts) {
-                    if (current <= minCount) {
-                        const max = counts - 2;
-                        for (let i = 1; i <= max; i++) {
-                            items.push(paginationButton(i));
-                        }
-                        items.push(paginationDot(self.fastNext));
-                        items.push(paginationButton(totalPages));
-                    } else if (current > minCount && current <= maxCount) {
-                        items.push(paginationButton(1));
-                        items.push(paginationDot(self.fastPrev));
+ if (!simple) {
+    if (totalPages > counts) {
+        if (value <= minCount) {
+            const max = counts - 2;
+            for (let i = 1; i <= max; i++) {
+                paginationItems.push(paginationButton(i));
+            }
+            paginationItems.push(paginationDot(this.fastNext));
+            paginationItems.push(paginationButton(totalPages));
+        } else if (value > minCount && value <= maxCount) {
+            paginationItems.push(paginationButton(1));
+            paginationItems.push(paginationDot(this.fastPrev));
 
-                        const midCount = counts - 4;
-                        const mid = Math.floor(midCount / 2);
-                        const min = current - mid;
-                        const max = midCount % 2 === 1 ? current + mid : current + mid - 1;
-                        for (let i = min; i <= max; i++) {
-                            items.push(paginationButton(i));
-                        }
+            const midCount = counts - 4;
+            const mid = Math.floor(midCount / 2);
+            const min = value - mid;
+            const max = midCount % 2 === 1 ? value + mid : value + mid - 1;
+            for (let i = min; i <= max; i++) {
+                paginationItems.push(paginationButton(i));
+            }
 
-                        items.push(paginationDot(self.fastNext));
-                        items.push(paginationButton(totalPages));
-                    } else {
-                        items.push(paginationButton(1));
-                        items.push(paginationDot(self.fastPrev));
+            paginationItems.push(paginationDot(this.fastNext));
+            paginationItems.push(paginationButton(totalPages));
+        } else {
+            paginationItems.push(paginationButton(1));
+            paginationItems.push(paginationDot(this.fastPrev));
 
-                        const min = totalPages - counts + 3;
-                        for (let i = min; i <= totalPages; i++) {
-                            items.push(paginationButton(i));
-                        }
-                    }
-                } else {
-                    for (let i = 1; i <= totalPages; i++) {
-                        items.push(paginationButton(i));
-                    }
-                }
+            const min = totalPages - counts + 3;
+            for (let i = min; i <= totalPages; i++) {
+                paginationItems.push(paginationButton(i));
+            }
+        }
+    } else {
+        for (let i = 1; i <= totalPages; i++) {
+            paginationItems.push(paginationButton(i));
+        }
+    }
+} else {
+    paginationItems = [
+        <Input size={size === 'mini' || size === 'small' ? 'mini' : 'small'}
+            autoWidth
+            value={value}
+            ev-change={this.goto}
+        />,
+        <span class={`${k}-pagination-text`}> / {totalPages}</span>,
+    ];
+}
 
-                items;
-            } 
-        }}<Button icon size={{ size }}
-            disabled={{ current >= totalPages }}
-            ev-click={{ self.next }}
-            type={{ type }}
-        ><i class="k-icon ion-ios-arrow-right"></i></Button>
+<div class={classNameObj} {...getRestProps(this)}>
+    <div v-if={showTotal && !simple} class={`${k}-pagination-total`}>
+        {_$('共 {n} 条', {n: total})}
+    </div>
+
+    <ButtonGroup checkType="radio" v-model="value">
+        <Button icon size={size}
+            type="none"
+            disabled={value <= 1 || !!(disablePage && disablePage(value - 1, limit))}
+            ev-click={this.prev}
+        ><Icon class={`${k}-icon-left`} /></Button>
+        <template>{paginationItems}</template>
+        <Button icon size={size}
+            type="none"
+            disabled={value >= totalPages || !!(disablePage && disablePage(value + 1, limit))}
+            ev-click={this.next}
+        ><Icon class={`${k}-icon-right`} /></Button>
     </ButtonGroup>
 
-    <div class="k-limits">
-        <Select v-model="limit" allowUnmatch
-            data={{ limits.map(item => {
-                return {'value': item, 'label': _$('{n} 条 / 页', {n: item})};
-            }) }}
-            size={{ size }}
-        />
-    </div>
+    <template v-if={!simple}>
+        <div class={`${k}-pagination-limits`} v-if={showLimits}>
+            <Select v-model="limit" size={size} flat={flat}>
+                <Option v-for={limits} value={$value}>
+                    {_$('{n} 条 / 页', {n: $value})}
+                </Option>
+            </Select>
+        </div>
 
-    <div class="k-goto" v-if={{ showGoto }}>
-        {{ _$('跳至') }}<Input size={{ size }} value={{ current }}
-            ev-change={{ self._goto }}
-        />{{ _$('页') }}
-    </div>
-
-    <div v-if={{ showTotal }} class="k-total">{{ _$('共 {n} 条', {n: total}) }}</div>
+        <div class={`${k}-pagination-goto`} v-if={showGoto}>
+            <span class="c-middle">{_$('前往')}</span>
+            <Input size={size} value={value} ev-change={this.goto} flat={flat} />
+            <span class="c-middle">{_$('页')}</span>
+        </div>       
+    </template>
 </div>

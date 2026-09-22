@@ -1,53 +1,58 @@
-import Item from './item';
-import {mapChildren, isStringOrNumberNotEmpty} from '../utils';
+import {DropdownMenu} from '../dropdown';
+import {getRestProps, findChildren, isComponentVNode} from '../utils';
+import {isDropdown} from './useDropdown';
+import {makeMenuStyles, makeTitleStyles} from './styles';
+import {Icon} from '../icon';
 
-const {
-    children, className, style, collapse, dot,
-    theme, type, size, _isSubMenu, _root, _parent,
-} = self.get();
-
+const {children, className} = this.get();
+const {collapse, theme, type, size, showCollapseArrow} = (this.rootMenu || this).get();
+const isRootMenu = !this.rootMenu;
+const isDropdownMenu = !isRootMenu && isDropdown(this.rootMenu);
+const { k } = this.config;
 const classNameObj = {
-    'k-menu': true,
+    [`${k}-menu`]: true,
     [className]: className,
-    [`k-${theme}`]: !_root && theme,
-    [`k-${size}`]: !_root && size && size !== 'default',
-    'k-collapsed': collapse,
-    [`k-${type}`]: type,
+    [`${k}-${theme === 'dark' ? 'dark' : 'light'}`]: (isRootMenu || isDropdownMenu) && theme,
+    [`${k}-${size}`]: isRootMenu && size !== 'default',
+    [`${k}-collapsed`]: isRootMenu && collapse,
+    [`${k}-collapsed-arrow`]: isRootMenu && showCollapseArrow && collapse,
+    [`${k}-${type}`]: isRootMenu && type,
+    [makeMenuStyles(k)]: true,
 };
 
-const _children = mapChildren(children, vNode => {
-    if (vNode.tag === Item) {
-        return h(Item, {
-            dot: dot,
-            ...vNode.props, 
-            _root: _root || self,
-            _isFirstFloorChildren: !_root,
-            _parentItem: _parent,
-        });
-    }
-    return vNode;
-});
-
-const header = (
-    <div class="k-header" v-if={{ blocks.header }}>
-        {{ do {
-            mapChildren(<b:header />, vNode => {
-                if (vNode.type === 1 || isStringOrNumberNotEmpty(vNode)) {
-                    return <span>{{ vNode }}</span>;
-                } else {
-                    return vNode;
-                }
-            })
-        } }}
-    </div>
+const header = <b:header />
+const content = (
+    <template>
+        <div v-if={$blocks.header}
+            class={{
+                [`${k}-menu-header`]: true,
+                [makeTitleStyles(k)]: true
+            }}
+        >
+            <template v-if={!collapse}>{header}</template>
+            <template v-else>
+                {findChildren(header, vNode => isComponentVNode(vNode, Icon))}
+            </template>
+        </div>
+        <div v-if={isRootMenu && showCollapseArrow && type !== 'horizontal'}
+            class={`${k}-menu-arrow-box`}
+            ev-click={this.onClick.bind(this)}
+        >
+            <Icon class={`${k}-menu-arrow ion-arrow-left-b`} />
+        </div>
+        <div class={`${k}-menu-body`}>
+            {children}
+        </div>
+    </template>
 );
 
 <template>
-    <div v-if={{ !self._isDropdownMenu() }}
-        class={{ classNameObj }}
-        style={{ style }}
-    >{{ header }}{{ _children }}</div>
-    <t:parent v-else>
-        <b:children>{{ header }}{{ _children }}</b:children>
-    </t:parent>
+    <div v-if={!isDropdownMenu}
+        {...getRestProps(this)}
+        class={classNameObj}
+    >{content}</div>
+    <DropdownMenu v-else 
+        {...getRestProps(this)}
+        class={classNameObj}
+    >{content}</DropdownMenu>
 </template>
